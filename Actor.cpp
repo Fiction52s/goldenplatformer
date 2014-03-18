@@ -301,8 +301,6 @@ std::string & TrueActor::GetType()
 	return actorType;
 }
 
-//void TrueActorSetColor( uint8 r, uint8 g, uint8 b, uint8 a );
-
 int TrueActor::TileSetIndex( const std::string &tileSetName )
 {
 	for( int i = 0; i < stage->tileSetCount; ++i )
