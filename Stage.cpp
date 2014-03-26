@@ -69,6 +69,9 @@ sf::IntRect TileSet::GetSubRect( uint32 localID )
 Camera::Camera( Stage *stage )
 	:offsetSpeed( .1 ), mode( normal ), stage( stage )
 {
+	//UpdatePosition();
+	offset.x = 0;
+	offset.y = 0;
 }
 
 sf::Vector2f Camera::GetViewPos()
@@ -88,8 +91,6 @@ void Camera::Reset()
 
 void Camera::UpdatePosition()
 {
-
-
 	b2Vec2 playerPos = stage->player->GetPosition();
 	b2Vec2 playerVel = stage->player->GetVelocity() - stage->player->GetCarryVelocity();
 	switch( mode )
@@ -161,6 +162,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	newRoom = NULL;
 	currentDoor = NULL;
 	startRoom = NULL;
+	player = NULL;
 	//Resources/Worlds/Vertical Farming/
 	//"Resources/Worlds/Vertical Farming/Maps
 
@@ -185,7 +187,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	L = luaL_newstate();
 	luaL_openlibs( L );
 	
-
+	
 	
 	//luaL_dostring( L, "print( 'testing123123' )" );
 	
@@ -1331,9 +1333,9 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						}
 						//otherwise its an actor 
 
-
+						
 						uint32 id = boost::lexical_cast<uint32>( attr->value() );
-
+						cout << "id: " << id << ", count: " << actorTiles.count(id ) << endl;
 						assert( actorTiles.count( id ) > 0 );
 						string &actorType = actorTiles[id];
 
@@ -2623,9 +2625,10 @@ bool Stage::Run()
 			{
 				currentInput = controller.GetState();
 				currentInput.X = currentInput.X || currentInput.rightShoulder;
-				currentInput.rightShoulder = currentInput.rightTrigger > 10;
+				//currentInput.rightShoulder |= currentInput.rightTrigger > 10;
 				currentInput.Y = currentInput.Y || currentInput.leftShoulder;
 				currentInput.leftShoulder = currentInput.leftTrigger > 10;
+				currentInput.B |= currentInput.rightTrigger > 10;
 				
 				//bool temp = currentInput.X;
 				//currentInput.X = currentInput.leftShoulder;
@@ -3589,6 +3592,7 @@ void Stage::UpdatePostPhysics()
 
 	//view.setCenter( c.GetViewPos() );
 	sf::Vector2f viewPos = c.GetViewPos();
+	cout << "viewPos: " << viewPos.x * SF2BOX << ", " << viewPos.y * SF2BOX << endl;
 	camera = c.pos;
 	//sf::Vector2f viewPos( cam * BOX2SF );
 	//viewPos.x = floor( viewPos.x + .5f );
@@ -3870,6 +3874,7 @@ SingleActor * Stage::CreateActor( const std::string &type, b2Vec2 &pos, b2Vec2 &
 		player = new PlayerChar( pos, vel, facingRight, reverse, angle, parent, this );
 		addedActors.push_back( player );
 		currentRoom->spawn = pos;
+		cout << "spawn pos: " << pos.x << ", " << pos.y << endl;
 		//activeActors.push_back( player );
 		return (SingleActor*)player;
 	}
@@ -4469,6 +4474,7 @@ TileSet * Stage::LoadTileSet( const string &dir, const std::string &fileName, in
 					string actorType = attr->value();
 
 					actorTiles[localID + firstGID] = actorType;
+					cout << "registered " << actorType << ", TRUE ID: " << localID + firstGID << " -------------" << endl;
 				}
 				else if( boost::iequals( propertyName, "airtype" ) )
 				{

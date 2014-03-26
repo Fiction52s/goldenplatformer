@@ -37,6 +37,9 @@ ActorParams::ActorParams( int health, bool facingRight,
 	
 	def.fixedRotation = owner->fixedAngle;
 	def.bullet = true;
+
+	m_restitution = 0;
+	m_friction = 0;
 }
 
 ActorParams::~ActorParams()

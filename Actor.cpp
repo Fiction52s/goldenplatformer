@@ -103,6 +103,9 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 	L = luaL_newstate();
 	luaL_openlibs( L );
 
+
+	
+
 	string luaF =  "Resources/Actors/" + actorType + "/" + actorType + ".lua";
 	int s = luaL_loadfile( L, luaF.c_str() );
 	
