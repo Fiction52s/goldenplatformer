@@ -204,7 +204,9 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addFunction( "CreateBulletGroup", &Stage::CreateBulletGroup )
 				.addFunction( "GetCameraPosition", &Stage::GetCameraPosition )
 				.addFunction( "SetCameraZoom", &Stage::SetCameraZoom )
+				.addFunction( "HasPlayerPower", &Stage::HasPlayerPower )
 				.addData( "player", &Stage::player )
+				
 			.endClass()
 		.endNamespace();
 

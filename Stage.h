@@ -91,7 +91,7 @@ public:
 	//{
 	//	NORMAL,
 	//	RUMBLE,
-
+	uint32 playerPowers;
 	uint32 lives;
 	Camera c;
 	//};
@@ -112,7 +112,7 @@ public:
 	void SetRoomByName( const std::string &roomName );
 	Room *GetRoomByName( const std::string &roomName );
 	void SetRoom( Room *room );
-//private:
+	bool HasPlayerPower( const std::string & powerName );
 	void UpdateEventArea( b2Fixture *fixture,
 		bool entered );
 	bool HandleCollision( b2Contact *contact );

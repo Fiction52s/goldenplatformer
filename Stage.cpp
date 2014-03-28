@@ -155,6 +155,10 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	const std::string &name )
 	:window( window ), controller( controller ), debugDrawOn( false ), debugDrawEnv( false ),c( this )
 {
+	playerPowers = 0x00; //load powers here
+				//vertical farming is bit 0
+
+	playerPowers = 0;
 
 	lives = 3; //this might not be universal but it works for now
 
@@ -3592,7 +3596,7 @@ void Stage::UpdatePostPhysics()
 
 	//view.setCenter( c.GetViewPos() );
 	sf::Vector2f viewPos = c.GetViewPos();
-	cout << "viewPos: " << viewPos.x * SF2BOX << ", " << viewPos.y * SF2BOX << endl;
+	//cout << "viewPos: " << viewPos.x * SF2BOX << ", " << viewPos.y * SF2BOX << endl;
 	camera = c.pos;
 	//sf::Vector2f viewPos( cam * BOX2SF );
 	//viewPos.x = floor( viewPos.x + .5f );
@@ -4648,4 +4652,25 @@ void Stage::LevelRestart()
 	SetCameraZoom( 1 );
 	c.offset.SetZero();
 	player->SetPosition( spawnPoint.x, spawnPoint.y );
+}
+
+bool Stage::HasPlayerPower( const std::string & powerName )
+{
+	if( powerName == "boosterUpgrade" )
+	{
+		return (playerPowers & 1);
+	}
+	else if( powerName == "spacialTether" )
+	{
+		return playerPowers & ( 1 << 1 );
+	}
+	else if( powerName == "gravitySwitch" )
+	{
+		return playerPowers & ( 1 << 3 );
+	}
+	else
+	{
+		assert( 0 );
+	}
+	return false;
 }
