@@ -528,6 +528,7 @@ int main()
 			cout << "error no menu: " << currentMenu << endl;
 		}
 
+		
 		window->display();
 		//std::cin >> stage;
 		//stage = "t2-2";

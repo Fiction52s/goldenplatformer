@@ -64,9 +64,10 @@ class Stage;
 struct Camera
 {
 	Camera( Stage *stage );
-	enum Mode
+	enum CameraMode
 	{
 		normal,
+		transition,
 		special,
 		hybrid
 	};
@@ -76,9 +77,9 @@ struct Camera
 	float32 offsetSpeed;
 	
 	sf::Vector2f GetViewPos();
-	void UpdatePosition();
+	void UpdatePosition( Room * currentRoom );
 	void Reset();
-	Mode mode;
+	CameraMode mode;
 	Stage *stage;
 
 	float32 zoom;

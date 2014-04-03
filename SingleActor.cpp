@@ -340,7 +340,7 @@ void SingleActor::SetSpriteEnabled( uint32 spriteIndex, bool enabled )
 
 b2Vec2 & SingleActor::GetSpriteOffset( uint32 spriteIndex )
 {
-	cout << "getting sprite offset" << endl;
+//	cout << "getting sprite offset" << endl;
 	return actorParams->spriteOffset[spriteIndex];
 }
 

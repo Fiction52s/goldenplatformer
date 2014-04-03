@@ -89,10 +89,15 @@ void Camera::Reset()
 
 }
 
-void Camera::UpdatePosition()
+void Camera::UpdatePosition( Room * currentRoom )
 {
 	b2Vec2 playerPos = stage->player->GetPosition();
 	b2Vec2 playerVel = stage->player->GetVelocity() - stage->player->GetCarryVelocity();
+
+	sf::Vector2f viewPos = GetViewPos();
+	sf::IntRect camRect;
+	int newLeft = -1, newRight = -1, newTop = -1, newBottom = -1;
+
 	switch( mode )
 	{
 		case normal:
@@ -135,6 +140,58 @@ void Camera::UpdatePosition()
 			}
 
 			pos = playerPos + offset;
+
+			viewPos = GetViewPos();
+			//cout << "viewPos: " << viewPos.x * SF2BOX << ", " << viewPos.y * SF2BOX << endl;
+			
+			//sf::Vector2f viewPos( cam * BOX2SF );
+			//viewPos.x = floor( viewPos.x + .5f );
+			//viewPos.y = floor( viewPos.y + .5f );
+			//sf::Vector2f diff( cam - view.getCenter() );
+
+	
+			stage->view.setCenter( viewPos );
+
+			camRect = sf::IntRect( viewPos.x - zoom * 1920 / 2, viewPos.y - zoom * 1080/2, zoom * 1920, zoom * 1080 );
+			//mapView.setCenter( viewPos );
+
+			
+			if( camRect.left < currentRoom->left * BOX2SF)
+				newLeft = currentRoom->left* BOX2SF;
+			if( camRect.left + camRect.width > currentRoom->right * BOX2SF )
+				newRight = currentRoom->right* BOX2SF;
+			if( camRect.top < currentRoom->top* BOX2SF )
+				newTop = currentRoom->top* BOX2SF;
+			if( camRect.top + camRect.height > currentRoom->bottom* BOX2SF )
+				newBottom = currentRoom->bottom* BOX2SF;
+
+			if( newLeft >= 0 )
+			{
+				viewPos.x = newLeft + camRect.width / 2.f;//((newLeft + camRect.width / 2.f) + viewPos.x ) / 100;//camRect.left + 5;
+				stage->view.setCenter( viewPos );
+				stage->mapView.setCenter( viewPos );
+				cout << "left adjust" << endl;
+			}
+			if( newRight >= 0 )
+			{
+				viewPos.x = newRight - camRect.width / 2.f;//((newRight - camRect.width / 2.f) + viewPos.x ) / 2;
+				stage->view.setCenter( viewPos );
+				stage->mapView.setCenter( viewPos );
+				cout << "right adjust" << endl;
+			}
+
+			if( newTop >= 0 )
+			{
+				viewPos.y = newTop + camRect.height/ 2.f;
+				stage->view.setCenter( viewPos );
+				stage->mapView.setCenter( viewPos );
+			}
+			if( newBottom >= 0 )
+			{
+				viewPos.y = newBottom - camRect.height / 2.f;
+				stage->view.setCenter( viewPos );
+				stage->mapView.setCenter( viewPos );
+			}
 			//cout << "pos: " << pos.x << ", " << pos.y << endl;
 			break;
 		//	break;
@@ -142,6 +199,8 @@ void Camera::UpdatePosition()
 		//	break;
 		//case hybrid:
 		//	break;
+		case transition:
+			break;
 		default:
 			assert( 0 && "not working" );
 			break;
@@ -2555,6 +2614,7 @@ bool Stage::Run()
 	while ( !quit )
     {
 		double newTime = gameClock.getElapsedTime().asSeconds();
+		//cout << "time: " << newTime << endl;
 		double frameTime = newTime - currentTime;
 
 	//	if( frameTime > .0167 )
@@ -3568,7 +3628,9 @@ void Stage::UpdatePostPhysics()
 		
 	}
 
-	c.UpdatePosition();
+	
+	c.UpdatePosition( currentRoom );
+
 
 	//sf::Vector2f cam( camera.x, camera.y );
 
@@ -3613,44 +3675,7 @@ void Stage::UpdatePostPhysics()
 	//camera.x = cam.x;
 	//camera.y = cam.y;
 
-	sf::IntRect camRect( viewPos.x - cameraZoom * 1920 / 2, viewPos.y - cameraZoom * 1080/2, cameraZoom * 1920, cameraZoom * 1080 );
-
-
-	int newLeft = -1, newRight = -1, newTop = -1, newBottom = -1;
-	if( camRect.left < currentRoom->left * BOX2SF)
-		newLeft = currentRoom->left* BOX2SF;
-	if( camRect.left + camRect.width > currentRoom->right * BOX2SF )
-		newRight = currentRoom->right* BOX2SF;
-	if( camRect.top < currentRoom->top* BOX2SF )
-		newTop = currentRoom->top* BOX2SF;
-	if( camRect.top + camRect.height > currentRoom->bottom* BOX2SF )
-		newBottom = currentRoom->bottom* BOX2SF;
-
-	if( newLeft >= 0 )
-	{
-		viewPos.x = newLeft + camRect.width / 2.f;
-		view.setCenter( viewPos );
-		mapView.setCenter( viewPos );
-	}
-	if( newRight >= 0 )
-	{
-		viewPos.x = newRight - camRect.width / 2.f;
-		view.setCenter( viewPos );
-		mapView.setCenter( viewPos );
-	}
-
-	if( newTop >= 0 )
-	{
-		viewPos.y = newTop + camRect.height/ 2.f;
-		view.setCenter( viewPos );
-		mapView.setCenter( viewPos );
-	}
-	if( newBottom >= 0 )
-	{
-		viewPos.y = newBottom - camRect.height / 2.f;
-		view.setCenter( viewPos );
-		mapView.setCenter( viewPos );
-	}
+	
 	
 	
 
@@ -3682,6 +3707,7 @@ void Stage::SetCameraZoom( float zoom )
 	//1920 x 1080
 	//view.setSize( xxxxx * zoom, yyyyy * zoom );
 	cameraZoom = zoom;
+	c.zoom = zoom;
 	//view.zoom( zoom );
 }
 
