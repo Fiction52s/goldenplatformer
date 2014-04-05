@@ -39,6 +39,7 @@ struct Room
 	b2Vec2 spawn;
 	Room *owner; 
 	std::string ownerName;
+	
 	//if it has a parent then if
 	//you die here you spawn 
 	//in the parent room

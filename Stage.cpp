@@ -98,11 +98,14 @@ void Camera::UpdatePosition( Room * currentRoom )
 	sf::IntRect camRect;
 	int newLeft = -1, newRight = -1, newTop = -1, newBottom = -1;
 
+	float transitionSpeed = .5f;
+	b2Vec2 diff;
+
 	switch( mode )
 	{
 		case normal:
-			maxOffset.x = 8 * stage->GetCameraZoom();
-			maxOffset.y = 5 * stage->GetCameraZoom();
+			maxOffset.x = 8 * zoom;
+			maxOffset.y = 5 * zoom;
 			if( playerVel.x > 17 )
 			{
 				offset.x += offsetSpeed;
@@ -142,18 +145,13 @@ void Camera::UpdatePosition( Room * currentRoom )
 			pos = playerPos + offset;
 
 			viewPos = GetViewPos();
-			//cout << "viewPos: " << viewPos.x * SF2BOX << ", " << viewPos.y * SF2BOX << endl;
 			
-			//sf::Vector2f viewPos( cam * BOX2SF );
-			//viewPos.x = floor( viewPos.x + .5f );
-			//viewPos.y = floor( viewPos.y + .5f );
-			//sf::Vector2f diff( cam - view.getCenter() );
 
 	
 			stage->view.setCenter( viewPos );
+			stage->mapView.setCenter( viewPos );
 
 			camRect = sf::IntRect( viewPos.x - zoom * 1920 / 2, viewPos.y - zoom * 1080/2, zoom * 1920, zoom * 1080 );
-			//mapView.setCenter( viewPos );
 
 			
 			if( camRect.left < currentRoom->left * BOX2SF)
@@ -192,6 +190,9 @@ void Camera::UpdatePosition( Room * currentRoom )
 				stage->view.setCenter( viewPos );
 				stage->mapView.setCenter( viewPos );
 			}
+			pos.x = viewPos.x * SF2BOX;
+			pos.y = viewPos.y * SF2BOX;
+
 			//cout << "pos: " << pos.x << ", " << pos.y << endl;
 			break;
 		//	break;
@@ -200,6 +201,72 @@ void Camera::UpdatePosition( Room * currentRoom )
 		//case hybrid:
 		//	break;
 		case transition:
+			offset.x = 0;
+			offset.y = 0;
+			viewPos = GetViewPos();
+			camRect = sf::IntRect( viewPos.x - zoom * 1920 / 2, viewPos.y - zoom * 1080/2, zoom * 1920, zoom * 1080 );
+
+			if( camRect.left < currentRoom->left * BOX2SF)
+				newLeft = currentRoom->left* BOX2SF;
+			if( camRect.left + camRect.width > currentRoom->right * BOX2SF )
+				newRight = currentRoom->right* BOX2SF;
+			if( camRect.top < currentRoom->top* BOX2SF )
+				newTop = currentRoom->top* BOX2SF;
+			if( camRect.top + camRect.height > currentRoom->bottom* BOX2SF )
+				newBottom = currentRoom->bottom* BOX2SF;
+
+			
+			//diff = ( pos - playerPos );
+			//diff.Normalize();
+			//pos.x = pos.x - .1 * diff.x;
+			//pos.y = pos.y - .1 * diff.y;
+
+			//pos.x = pos.x - abs(stage->player->GetVelocity().x / 60) - transitionSpeed;
+			if( newLeft >= 0 )
+			{
+				pos.x = pos.x + stage->player->GetVelocity().x / 60 + transitionSpeed;//transitionSpeed;
+				pos.x = min( pos.x, (newLeft + camRect.width / 2.f ) * SF2BOX );
+				//viewPos.x = newLeft + camRect.width / 2.f;
+			}
+
+			if( newRight >= 0 )
+			{
+				pos.x = pos.x + stage->player->GetVelocity().x / 60 - transitionSpeed;
+				pos.x = max( pos.x, ( newRight - camRect.width / 2.f ) * SF2BOX );
+			}
+
+			if( newLeft < 0 && newRight < 0 )
+			{
+				//pos.x = playerPos.x;
+			}
+			
+			if( newTop >= 0 )
+			{
+				pos.y = pos.y + transitionSpeed;
+			}
+
+			if( newBottom >= 0 )
+			{
+				pos.y = pos.y - transitionSpeed;
+			}
+
+			if( newTop < 0 && newBottom < 0 )
+			{
+				pos.y = playerPos.y;
+			}
+			cout << "transition mode pos: " << pos.x << ", " << pos.y << ", player: " << playerPos.x << ", " << playerPos.y << endl;
+			//if( abs(pos.x - playerPos.x) < 1 && abs(pos.y - playerPos.y) < 1 )
+			if( newLeft < 0 && newRight < 0 && newTop < 0 && newBottom < 0 )
+			{
+				mode = CameraMode::normal;
+				stage->oldRoom->Exit();
+				stage->oldRoom = NULL;
+			}
+
+			viewPos = GetViewPos();
+			stage->view.setCenter( viewPos );
+			stage->mapView.setCenter( viewPos );
+
 			break;
 		default:
 			assert( 0 && "not working" );
@@ -214,13 +281,17 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	const std::string &name )
 	:window( window ), controller( controller ), debugDrawOn( false ), debugDrawEnv( false ),c( this )
 {
-	playerPowers = 0x00; //load powers here
-				//vertical farming is bit 0
+	//load powers here
+	//vertical farming is bit 0
+
+	exitRoom = false;
+
 
 	playerPowers = 0;
 
 	lives = 3; //this might not be universal but it works for now
 
+	oldRoom = NULL;
 	currentRoom = NULL;
 	newRoom = NULL;
 	currentDoor = NULL;
@@ -1562,6 +1633,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 					if( currentRoom == room )
 					{
 						currentRoom->Enter( "test" );
+						c.mode = Camera::CameraMode::normal;
 					}
 					//if( squad->empty() )
 					//{
@@ -2191,6 +2263,7 @@ void Stage::SetRoomByName( const std::string &roomName )
 		if( (*it)->name == roomName )
 		{
 			newRoom = (*it);
+			break;
 		}
 	}
 }
@@ -2216,9 +2289,16 @@ bool Stage::UpdatePrePhysics()
 {
 	if( newRoom != NULL )
 	{
-		currentRoom->Exit();
+		oldRoom = currentRoom;
 		currentRoom = newRoom;
+		if( exitRoom )
+		{
+			oldRoom->Exit();
+			c.mode = Camera::CameraMode::normal;
+			exitRoom = false;
+		}
 		currentRoom->Enter( currentDoor->name );
+		
 		newRoom = NULL;
 	}
 
@@ -3657,7 +3737,7 @@ void Stage::UpdatePostPhysics()
 	cam.y += diff.y * follow.y;*/
 
 	//view.setCenter( c.GetViewPos() );
-	sf::Vector2f viewPos = c.GetViewPos();
+//	sf::Vector2f viewPos = c.GetViewPos();
 	//cout << "viewPos: " << viewPos.x * SF2BOX << ", " << viewPos.y * SF2BOX << endl;
 	camera = c.pos;
 	//sf::Vector2f viewPos( cam * BOX2SF );
@@ -3666,8 +3746,8 @@ void Stage::UpdatePostPhysics()
 	//sf::Vector2f diff( cam - view.getCenter() );
 
 	
-	view.setCenter( viewPos );
-	mapView.setCenter( viewPos );
+	//view.setCenter( viewPos );
+	//mapView.setCenter( viewPos );
 	//mapView.setCenter( viewPos );
 	//view.setRotation( player->GetSpriteAngle() * 180 * 3.5 );
 	//cout << "sprite angle: " << player->GetSpriteAngle() << endl;
@@ -4634,6 +4714,8 @@ void Stage::RoomRestart()
 
 	Room *ownerRoom = currentRoom->GetOwner();
 	SetRoom( ownerRoom );
+	exitRoom = true;
+
 
 	b2Vec2 &spawnPoint = ownerRoom->GetSpawnPoint();
 				

@@ -92,6 +92,8 @@ public:
 	//{
 	//	NORMAL,
 	//	RUMBLE,
+
+	bool exitRoom;
 	uint32 playerPowers;
 	uint32 lives;
 	Camera c;
@@ -192,6 +194,8 @@ public:
 	Room * newRoom; //for switching rooms
 	//std::string enterDoor;
 	Door * currentDoor;
+
+	Room *oldRoom;
 
 private:
 	TileSet * LoadTileSet( const std::string &dir,

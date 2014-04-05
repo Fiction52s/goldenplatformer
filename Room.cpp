@@ -62,7 +62,7 @@ void Room::Enter( const string &doorName )
 
 		actors.push_back( a );
 	}
-//	stage->c.mode = Camera::CameraMode::transition;
+	stage->c.mode = Camera::CameraMode::transition;
 	
 }
 
