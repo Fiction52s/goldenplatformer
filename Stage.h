@@ -254,7 +254,7 @@ private:
 	
 
 	void EnterCloneWorld();
-	//void CollapseCloneWorld();
+	void CollapseCloneWorld();
 	void RevertCloneWorld();
 	
 	//void ExtraCloneWorld();
@@ -265,6 +265,8 @@ private:
 public:
 	bool cloneWorld;
 	bool cloneWorldStart;
+	bool cloneWorldRevert;
+	bool cloneWorldCollapse;
 	static void InitStaticVars( sf::RenderWindow * win );
 	static sf::Texture *pauseBGTexture;
 	static sf::Sprite *pauseBGSprite;

@@ -634,6 +634,7 @@ struct PlayerChar: public SingleActor
 	ControllerState currentInput;
 	ControllerState prevInput;
 	sf::Shader playerShader;
+	sf::Shader cloneShader;
 	b2Vec2 carryVel;
 
 	b2Vec2 save_carryVel;

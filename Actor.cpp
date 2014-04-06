@@ -34,6 +34,12 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 		cout << "FAILED SHADER LOAD" << endl;
 	}
 
+	if( !cloneShader.loadFromFile( "Resources/Actors/player/firstvertex.vert", 
+		"Resources/Actors/player/firstfrag.frag" ) )
+	{
+		cout << "FAILED SHADER LOAD" << endl;
+	}
+
 	getGlobalNamespace( L )
 		.beginNamespace( "A" )
 			//.deriveClass<PlayerChar, Actor>( "PlayerChar" )
@@ -78,7 +84,15 @@ void PlayerChar::Draw( sf::RenderTarget *target )
 	{
 		if( actorParams->spriteIsEnabled[i] )
 		{
-			target->draw( *(sprite[i]), &playerShader );
+			if( stage->cloneWorld )
+			{
+				target->draw( *(sprite[i]), &cloneShader );
+			}
+			else
+			{
+				target->draw( *(sprite[i]) );
+			}
+			//target->draw( *(sprite[i]), &playerShader );
 		}
 	}
 }
@@ -220,6 +234,8 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addData( "player", &Stage::player )
 				.addData( "cloneWorldStart", &Stage::cloneWorldStart )
 				.addData( "cloneWorld", &Stage::cloneWorld )
+				.addData( "cloneWorldRevert", &Stage::cloneWorldRevert )
+				.addData( "cloneWorldCollapse", &Stage::cloneWorldCollapse )
 			.endClass()
 		.endNamespace();
 

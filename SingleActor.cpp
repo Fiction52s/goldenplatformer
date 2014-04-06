@@ -472,6 +472,9 @@ void SingleActor::SaveState()
 	//	(*(save_sprite[i])) = *sprite;
 	//	save_sprite[i]->
 	}
+
+	actorParams->SaveState();
+
 	TrueActor::SaveState();
 }
 
@@ -484,6 +487,8 @@ void SingleActor::LoadState()
 	//	(*(save_sprite[i])) = *sprite;
 	//	save_sprite[i]->
 	}
+
+	actorParams->LoadState();
 
 	TrueActor::LoadState();
 

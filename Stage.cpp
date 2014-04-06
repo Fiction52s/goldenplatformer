@@ -168,14 +168,14 @@ void Camera::UpdatePosition( Room * currentRoom )
 				viewPos.x = newLeft + camRect.width / 2.f;//((newLeft + camRect.width / 2.f) + viewPos.x ) / 100;//camRect.left + 5;
 				stage->view.setCenter( viewPos );
 				stage->mapView.setCenter( viewPos );
-				cout << "left adjust" << endl;
+				//cout << "left adjust" << endl;
 			}
 			if( newRight >= 0 )
 			{
 				viewPos.x = newRight - camRect.width / 2.f;//((newRight - camRect.width / 2.f) + viewPos.x ) / 2;
 				stage->view.setCenter( viewPos );
 				stage->mapView.setCenter( viewPos );
-				cout << "right adjust" << endl;
+				//cout << "right adjust" << endl;
 			}
 
 			if( newTop >= 0 )
@@ -288,6 +288,10 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	exitRoom = false;
 	cloneWorld = false;
 	cloneWorldStart = false;
+
+	
+	cloneWorldRevert = false;
+	cloneWorldCollapse = false;
 
 	playerPowers = 0;
 
@@ -2318,17 +2322,38 @@ bool Stage::UpdatePrePhysics()
 	consumed.clear();
 
 
-	std::list<TrueActor*> oldAddedActors;
-	for( std::list<TrueActor*>::iterator it = addedActors.begin(); it != addedActors.end(); ++it )
+	
+	if( cloneWorld )
 	{
-		oldAddedActors.push_back( (*it) );
-	}
-	addedActors.clear();
+		std::list<TrueActor*> cloneOldAddedActors;
 
-	for( std::list<TrueActor*>::iterator it = oldAddedActors.begin(); it != oldAddedActors.end(); ++it )
+		for( std::list<TrueActor*>::iterator it = cloneAddedActors.begin(); it != cloneAddedActors.end(); ++it )
+		{
+			cloneOldAddedActors.push_back( (*it) );
+		}
+		cloneAddedActors.clear();
+
+		for( std::list<TrueActor*>::iterator it = cloneOldAddedActors.begin(); it != cloneOldAddedActors.end(); ++it )
+		{
+			(*it)->Init( world );
+			cloneActiveActors.push_back( (*it) );
+		}
+	}
+	else
 	{
-		(*it)->Init( world );
-		activeActors.push_back( (*it) );
+		std::list<TrueActor*> oldAddedActors;
+	
+		for( std::list<TrueActor*>::iterator it = addedActors.begin(); it != addedActors.end(); ++it )
+		{
+			oldAddedActors.push_back( (*it) );
+		}
+		addedActors.clear();
+
+		for( std::list<TrueActor*>::iterator it = oldAddedActors.begin(); it != oldAddedActors.end(); ++it )
+		{
+			(*it)->Init( world );
+			activeActors.push_back( (*it) );
+		}
 	}
 
 
@@ -2368,7 +2393,14 @@ bool Stage::UpdatePrePhysics()
 	for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 	{
 		(*it)->ProcessCollisions();
-		//cout << (*it)->GetPosition().x << (*it)->GetPosition().y << endl;
+	}
+
+	if( cloneWorld )
+	{
+		for( std::list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end(); ++it )
+		{
+			(*it)->ProcessCollisions();
+		}
 	}
 	//cout << "coltime: " << colClock.getElapsedTime().asSeconds() << endl;
 
@@ -2400,7 +2432,9 @@ bool Stage::UpdatePrePhysics()
 
 					//could be a way to make this more efficient. I need to have this so the room doesn't double-delete the actors
 					//when you leave the room
-					for( list<TrueActor*>::iterator rIt = currentRoom->actors.begin(); rIt != currentRoom->actors.end(); )
+					
+					
+					/*for( list<TrueActor*>::iterator rIt = currentRoom->actors.begin(); rIt != currentRoom->actors.end(); )
 					{
 						if( (*rIt) == a )
 						{
@@ -2411,9 +2445,16 @@ bool Stage::UpdatePrePhysics()
 						{
 							++rIt;
 						}
-					}
+					}*/
 
-					delete a;
+					if( cloneWorld )
+					{
+						cloneKilledActors.push_back( a );
+					}
+					else
+					{
+						delete a;
+					}
 
 					//world->DestroyBody( a->m_body );
 				}
@@ -2433,7 +2474,7 @@ bool Stage::UpdatePrePhysics()
 
 					++testPlayerDeathCount;
 					(*it)->isAlive = true;
-					(*it)->UpdatePrePhysics();
+					//(*it)->UpdatePrePhysics();
 					++it;
 				}
 				//delete a;
@@ -2473,8 +2514,64 @@ bool Stage::UpdatePrePhysics()
 			}
 	}
 
+	if( cloneWorld )
+	{
+		for( std::list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end();)
+		{
+			if( !(*it)->isAlive )
+			{
+				if( (*it) != player )
+				{
+					TrueActor *a = (*it);
+					it = cloneActiveActors.erase( it );
+					//cleanup and delete actor
+					//delete a;
+
+					//could be a way to make this more efficient. I need to have this so the room doesn't double-delete the actors
+					//when you leave the room
+					/*for( list<TrueActor*>::iterator rIt = currentRoom->actors.begin(); rIt != currentRoom->actors.end(); )
+					{
+						if( (*rIt) == a )
+						{
+							//TrueActor *ra = (*rIt);
+						//	rIt = currentRoom->actors.erase( rIt );
+						}
+						else
+						{
+							//++rIt;
+						}
+					}*/
+
+					//cloneKilledActors.push_back( a );
+					delete a;
+
+					//world->DestroyBody( a->m_body );
+				}
+			}
+			else
+			{
+				//^^ this can't remain in the game (the timer)
+				if( (*it) != player )
+				{
+					if( !(*it)->IsPaused() && !((*it)->isGroup) || (*it)->isGroup )
+					{
+						(*it)->UpdatePrePhysics();
+					}
+				}
+				++it;
+			}
+		}
+	}
+
+
 	if( !player->IsPaused() )
 	{
+		if( cloneWorld && !player->isAlive )
+		{
+			player->isAlive = true;
+			cloneWorldRevert = true;
+		}
+		assert( player->isAlive );
 		player->UpdatePrePhysics();
 	}
 	
@@ -2782,7 +2879,7 @@ bool Stage::Run()
 				currentInput.X = currentInput.X || currentInput.rightShoulder;
 				//currentInput.rightShoulder |= currentInput.rightTrigger > 10;
 				currentInput.Y = currentInput.Y;// || currentInput.leftShoulder;
-				currentInput.leftShoulder = currentInput.leftTrigger > 10;
+				//currentInput.leftShoulder = currentInput.leftTrigger > 10;
 				currentInput.B |= currentInput.rightTrigger > 10;
 				
 				//bool temp = currentInput.X;
@@ -2851,7 +2948,7 @@ bool Stage::Run()
 			{
 				renderOnce = true;
 
-				if( currentInput.leftShoulder && !prevInput.leftShoulder || currentInput.rightShoulder )
+				if( currentInput.leftTrigger > 10 && prevInput.leftTrigger <= 10 || currentInput.rightShoulder )
 				{
 					m_skipFrame = true;
 					prevInput = storedInput;
@@ -3073,15 +3170,20 @@ bool Stage::Run()
 			UpdatePostPhysics();
 
 			
-			if( !cloneWorld && cloneWorldStart )
+			if( cloneWorldStart )
 			{
+				assert( !cloneWorld );
 				cloneWorldStart = false;
 				EnterCloneWorld();
 			}
-			else if( cloneWorld && cloneWorldStart )
+			else if( cloneWorld && !cloneWorldStart && cloneWorldRevert )
 			{
-				cloneWorldStart = false;
+				cloneWorldRevert = false;
 				RevertCloneWorld();
+			}
+			else if( cloneWorld && !cloneWorldStart && cloneWorldCollapse )
+			{
+				CollapseCloneWorld();
 			}
 			//cout << "posttime: " << testClock.getElapsedTime().asSeconds()<< endl;
 
@@ -4848,7 +4950,7 @@ void Stage::EnterCloneWorld()
 	//lua_getglobal( L, "SaveState" );
 	//lua_pcall( player->L, 0, 0, 0 );
 
-	save_addedActors.clear();
+	cloneAddedActors.clear();
 	for( list<TrueActor*>::iterator it = addedActors.begin(); it != addedActors.end(); ++it )
 	{
 		cloneAddedActors.push_back( (*it) );
@@ -4890,10 +4992,27 @@ void Stage::RevertCloneWorld()
 		addedActors.push_back( (*it) );
 	}*/
 
+	for( list<TrueActor*>::iterator it = cloneKilledActors.begin(); it != cloneKilledActors.end(); ++it )
+	{
+		activeActors.push_back( (*it) );
+	}
+
 	for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 	{
 		(*it)->LoadState();
 	}
+
+	for( list<TrueActor*>::iterator it = cloneAddedActors.begin(); it != cloneAddedActors.end(); ++it )
+	{
+		delete (*it);
+	}
+	cloneAddedActors.clear();
+
+	for( list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end(); ++it )
+	{
+		delete (*it);
+	}
+	cloneActiveActors.clear();
 	
 	consumed.clear();
 	for( list<string>::iterator it = save_consumed.begin(); it != save_consumed.end(); ++it )
@@ -4909,4 +5028,32 @@ void Stage::RevertCloneWorld()
 	prevInput = save_prevInput;
 
 	c = cloneCamera;
+
+	
+	cloneKilledActors.clear();
+}
+
+void Stage::CollapseCloneWorld()
+{
+	addedActors.clear();
+	for( list<TrueActor*>::iterator it = cloneAddedActors.begin(); it != cloneAddedActors.end(); ++it )
+	{
+		addedActors.push_back( (*it) );
+	}
+	cloneAddedActors.clear();
+
+	for( list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end(); ++it )
+	{
+		activeActors.push_back( (*it) );
+	}
+	cloneActiveActors.clear();
+
+	for( list<TrueActor*>::iterator it = cloneKilledActors.begin(); it != cloneKilledActors.end(); ++it )
+	{
+		//activeActors.push_back( (*it) );
+		delete (*it);
+	}
+	cloneKilledActors.clear();
+
+	cloneWorld = false;
 }

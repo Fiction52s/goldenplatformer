@@ -378,4 +378,45 @@ void ActorParams::SaveState()
 
 void ActorParams::LoadState()
 {
+	cout << "load state: " << owner->actorType << endl;
+	isAlive = save_isAlive;
+	m_friction = save_friction;
+	m_restitution = save_restitution;
+	m_paused = save_paused;
+	hitsReceivedSize = save_hitsReceivedSize;
+	for( int i = 0; i < hitsReceivedSize; ++i )
+	{
+		hitsReceived[i] = save_hitsReceived[i]; 
+	}
+
+	bodyCollisionsSize = save_bodyCollisionsSize;
+	for( int i = 0; i < bodyCollisionsSize; ++i )
+	{
+		bodyCollisions[i] = save_bodyCollisions[i];
+	}
+
+	actorsAttackedSize = save_actorsAttackedSize;
+	actorsAttackedIndex = save_actorsAttackedIndex;
+	for( int i = 0; i < owner->spriteCount; ++i )
+	{
+		spriteIsEnabled[i] = save_spriteIsEnabled[i];
+		spriteOffset[i] = save_spriteOffset[i];
+	}
+	SetPosition( save_position.x, save_position.y );
+	SetBodyAngle( save_angle );
+	SetVelocity( save_velocity.x, save_velocity.y );
+
+	
+	b2Fixture *f = body->GetFixtureList();
+	while( f != NULL )
+	{
+		b2Fixture *toDestroy = f;
+		f = f->GetNext();
+		body->DestroyFixture( toDestroy );
+	}
+
+	for( list<b2FixtureDef>::iterator it = save_fixtureDefs.begin(); it != save_fixtureDefs.end(); ++it )
+	{
+		body->CreateFixture( &(*it) );
+	}
 }
