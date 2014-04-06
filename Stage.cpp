@@ -279,13 +279,15 @@ void Camera::UpdatePosition( Room * currentRoom )
 
 Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::string &dir, 
 	const std::string &name )
-	:window( window ), controller( controller ), debugDrawOn( false ), debugDrawEnv( false ),c( this )
+	:window( window ), controller( controller ), debugDrawOn( false ), debugDrawEnv( false ),c( this ), 
+	cloneCamera( this )
 {
 	//load powers here
 	//vertical farming is bit 0
 
 	exitRoom = false;
-
+	cloneWorld = false;
+	cloneWorldStart = false;
 
 	playerPowers = 0;
 
@@ -2659,36 +2661,45 @@ bool Stage::Run()
 			}
 		}
 	}*/
-	std::list<TrueActor*> oldAddedActors;
-
 	
-	for( std::list<TrueActor*>::iterator it = addedActors.begin(); it != addedActors.end(); ++it )
-	{
-		oldAddedActors.push_back( (*it) );
-		//(*it)->Init( world );
-		//activeActors.push_back( (*it) );
-	}
-	addedActors.clear();
 
-	for( std::list<TrueActor*>::iterator it = oldAddedActors.begin(); it != oldAddedActors.end(); ++it )
+	if( cloneWorld )
 	{
+		std::list<TrueActor*> cloneOldAddedActors;
+
+		for( std::list<TrueActor*>::iterator it = cloneAddedActors.begin(); it != cloneAddedActors.end(); ++it )
+		{
+			cloneOldAddedActors.push_back( (*it) );
+		}
+		cloneAddedActors.clear();
+
+		for( std::list<TrueActor*>::iterator it = cloneOldAddedActors.begin(); it != cloneOldAddedActors.end(); ++it )
+		{
+			(*it)->Init( world );
+			cloneActiveActors.push_back( (*it) );
+		}
+	}
+	else
+	{
+		std::list<TrueActor*> oldAddedActors;
+	
+		for( std::list<TrueActor*>::iterator it = addedActors.begin(); it != addedActors.end(); ++it )
+		{
+			oldAddedActors.push_back( (*it) );
+			//(*it)->Init( world );
+			//activeActors.push_back( (*it) );
+		}
+		addedActors.clear();
+
+		for( std::list<TrueActor*>::iterator it = oldAddedActors.begin(); it != oldAddedActors.end(); ++it )
+		{
 		//oldAddedActors.push_back( (*it) );
-		(*it)->Init( world );
-		activeActors.push_back( (*it) );
+			(*it)->Init( world );
+			activeActors.push_back( (*it) );
+		}
 	}
-	
-/*	sf::Text testText;
-	std::stringstream ss2; 
-	ss2 << "HELLO";
-	//testText.setString( ss2.str() );
-	testText.setString( "HELLO" );
-	testText.setCharacterSize( 10000 );
-	testText.setFont( debugFont );
-	testText.setPosition( pauseMenuTexts[3].getPosition() );
-	testText.setColor( sf::Color::Red );
-	testText.setOrigin( testText.getLocalBounds().left + testText.getLocalBounds().width/2.f,
-	testText.getLocalBounds().top + testText.getLocalBounds().height/2.f );*/
 
+	
 	
 
 	while ( !quit )
@@ -2770,7 +2781,7 @@ bool Stage::Run()
 				currentInput = controller.GetState();
 				currentInput.X = currentInput.X || currentInput.rightShoulder;
 				//currentInput.rightShoulder |= currentInput.rightTrigger > 10;
-				currentInput.Y = currentInput.Y || currentInput.leftShoulder;
+				currentInput.Y = currentInput.Y;// || currentInput.leftShoulder;
 				currentInput.leftShoulder = currentInput.leftTrigger > 10;
 				currentInput.B |= currentInput.rightTrigger > 10;
 				
@@ -3060,6 +3071,18 @@ bool Stage::Run()
 
 
 			UpdatePostPhysics();
+
+			
+			if( !cloneWorld && cloneWorldStart )
+			{
+				cloneWorldStart = false;
+				EnterCloneWorld();
+			}
+			else if( cloneWorld && cloneWorldStart )
+			{
+				cloneWorldStart = false;
+				RevertCloneWorld();
+			}
 			//cout << "posttime: " << testClock.getElapsedTime().asSeconds()<< endl;
 
 		//view
@@ -3684,6 +3707,18 @@ void Stage::UpdatePostPhysics()
 		}
 	}
 
+	if( cloneWorld )
+	{
+		for( list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end(); ++it )
+		{
+			if( !(*it)->IsPaused() && !((*it)->isGroup) || (*it)->isGroup )
+			{
+				(*it)->UpdatePostPhysics();
+			}
+		}
+	}
+	
+
 	for( list<b2Fixture*>::iterator it = eventAreasEntered.begin(); it != eventAreasEntered.end(); ++it )
 	{
 		UpdateEventArea( (*it), true );
@@ -3991,7 +4026,14 @@ SingleActor * Stage::CreateActor( const std::string &type, b2Vec2 &pos, b2Vec2 &
 	else
 	{
 		SingleActor *a = new SingleActor( type, pos, vel, facingRight, reverse, angle, parent, this );
-		addedActors.push_back( a );
+		if( cloneWorld )
+		{
+			cloneAddedActors.push_back( a );
+		}
+		else
+		{
+			addedActors.push_back( a );
+		}
 		return a;
 		//activeActors.push_back( a );
 	}	
@@ -4003,7 +4045,14 @@ GroupActor * Stage::CreateActorGroup( const std::string &type, uint32 actorCount
 {
 	GroupActor *a = new GroupActor( type, actorCount, pos, vel, facingRight, reverse, angle, parent, 
 		this );
-	addedActors.push_back( a );
+	if( cloneWorld )
+	{
+		cloneAddedActors.push_back( a );
+	}
+	else
+	{
+		addedActors.push_back( a );
+	}
 	return a;
 }
 
@@ -4011,7 +4060,14 @@ GroupActor * Stage::CreateActorGroup( const std::string &type, uint32 actorCount
 BulletActor * Stage::CreateBulletGroup( uint32 actorCount, b2Vec2 &pos, b2Vec2 &vel, TrueActor *parent )
 {
 	BulletActor *a = new BulletActor( "basicturretbullet", actorCount, pos, vel, parent, this );
-	addedActors.push_back( a );
+	if( cloneWorld )
+	{
+		cloneAddedActors.push_back( a );
+	}
+	else
+	{
+		addedActors.push_back( a );
+	}
 	return a;
 }
 
@@ -4781,4 +4837,76 @@ bool Stage::HasPlayerPower( const std::string & powerName )
 		assert( 0 );
 	}
 	return false;
+}
+
+void Stage::EnterCloneWorld()
+{
+	assert( !cloneWorld );
+
+	cloneWorld = true;
+
+	//lua_getglobal( L, "SaveState" );
+	//lua_pcall( player->L, 0, 0, 0 );
+
+	save_addedActors.clear();
+	for( list<TrueActor*>::iterator it = addedActors.begin(); it != addedActors.end(); ++it )
+	{
+		cloneAddedActors.push_back( (*it) );
+	}
+
+	for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+	{
+		(*it)->SaveState();
+	}
+
+	save_consumed.clear();
+	for( list<string>::iterator it = consumed.begin(); it != consumed.end(); ++it )
+	{
+		save_consumed.push_back( (*it) );
+	}
+
+	save_collisions.clear();
+	for( list<StageCollision>::iterator it = collisions.begin(); it != collisions.end(); ++it )
+	{
+		save_collisions.push_back( (*it) );	
+	}
+	save_prevInput = prevInput;
+
+	cloneCamera = c;
+}
+
+void Stage::RevertCloneWorld()
+{
+	assert( cloneWorld );
+
+	cloneWorld = false;
+
+	//lua_getglobal( L, "Load" );
+	//lua_pcall( player->L, 0, 0, 0 );
+
+	/*addedActors.clear();
+	for( list<TrueActor*>::iterator it = cloneAddedActors.begin(); it != cloneAddedActors.end(); ++it )
+	{
+		addedActors.push_back( (*it) );
+	}*/
+
+	for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+	{
+		(*it)->LoadState();
+	}
+	
+	consumed.clear();
+	for( list<string>::iterator it = save_consumed.begin(); it != save_consumed.end(); ++it )
+	{
+		consumed.push_back( (*it) );
+	}
+
+	collisions.clear();
+	for( list<StageCollision>::iterator it = save_collisions.begin(); it != save_collisions.end(); ++it )
+	{
+		collisions.push_back( (*it) );	
+	}
+	prevInput = save_prevInput;
+
+	c = cloneCamera;
 }

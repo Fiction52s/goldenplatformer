@@ -280,8 +280,29 @@ struct ActorParams
 	uint32 actorsAttackedSize;
 	uint32 actorsAttackedIndex; 
 	bool *spriteIsEnabled;
+
 	
-	
+	bool save_isAlive;
+	float32 save_friction;
+	float32 save_restitution;
+	bool save_paused;
+	ActorHit *save_hitsReceived;
+	uint32 save_hitsReceivedSize;
+	ActorCollision *save_bodyCollisions;
+	uint32 save_bodyCollisionsSize;
+	ActorHitOffense *save_actorsAttacked;
+	uint32 save_actorsAttackedSize;
+	uint32 save_actorsAttackedIndex;
+	bool *save_spriteIsEnabled;
+	b2Vec2 *save_spriteOffset;
+	b2Vec2 save_position;
+	b2Vec2 save_velocity;
+	float32 save_angle;
+	std::list<b2FixtureDef> save_fixtureDefs;
+
+
+	void SaveState();
+	void LoadState();
 	//std::string currentHitboxType;
 	//uint32 currentHitlag;
 };
@@ -456,6 +477,17 @@ struct TrueActor : public b2RayCastCallback //change this later
 	bool isReversed;
 	bool isGroup;
 	uint32 health;
+
+	float save_restitution;
+	float save_density;
+	bool save_facingRight;
+	bool save_isAlive;
+	bool save_isReversed;
+	uint32 save_health;
+	
+
+	virtual void SaveState();
+	virtual void LoadState();
 };
 
 struct SingleActor : public TrueActor
@@ -464,6 +496,11 @@ struct SingleActor : public TrueActor
 	float32 *m_spriteAngle;
 	ActorParams *actorParams;
 	bool *spriteIsEnabled;
+
+	//clone stuff
+	sf::Sprite **save_sprite;
+	float32 *save_spriteAngle;
+
 
 	SingleActor( const std::string &actorType,
 		const b2Vec2 &pos, const b2Vec2 &vel,
@@ -578,6 +615,11 @@ struct SingleActor : public TrueActor
 	uint32 & GetActorsAttackedSize();
 
 	uint32 & GetActorsAttackedIndex();
+
+	virtual void SaveState();
+	virtual void LoadState();
+
+
 };
 
 struct PlayerChar: public SingleActor
@@ -593,6 +635,11 @@ struct PlayerChar: public SingleActor
 	ControllerState prevInput;
 	sf::Shader playerShader;
 	b2Vec2 carryVel;
+
+	b2Vec2 save_carryVel;
+
+	virtual void SaveState();
+	virtual void LoadState();
 	
 };
 
@@ -759,6 +806,8 @@ struct GroupActor : public TrueActor
 
 	uint32 & GetActorsAttackedIndex();
 
+	virtual void SaveState();
+	virtual void LoadState();
 };
 
 struct BulletActor: public GroupActor
@@ -780,6 +829,9 @@ struct BulletActor: public GroupActor
 	b2Vec2 **posHistory;
 	b2Vec2 **velHistory;
 	sf::Shader bulletShader;
+
+	virtual void SaveState();
+	virtual void LoadState();
 };
 
 struct TentacleActor : public GroupActor

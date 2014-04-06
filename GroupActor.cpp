@@ -613,3 +613,11 @@ void GroupActor::SetOrigin( float x, float y )
 	origin.x = x * BOX2SF;
 	origin.y = y * BOX2SF;
 }
+
+void GroupActor::SaveState()
+{
+}
+
+void GroupActor::LoadState()
+{
+}

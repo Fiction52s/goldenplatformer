@@ -356,3 +356,12 @@ void BulletActor::ClearTrail()
 	//posHistory[aIndex][0].Set( pos.x, pos.y );
 	//velHistory[aIndex][0].Set( vel.x, vel.y );
 }
+
+void BulletActor::SaveState()
+{
+}
+
+void BulletActor::LoadState()
+{
+}
+

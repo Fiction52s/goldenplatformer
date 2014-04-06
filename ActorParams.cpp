@@ -20,7 +20,14 @@ ActorParams::ActorParams( int health, bool facingRight,
 	actorsAttacked = new ActorHitOffense[actorsAttackedCap];
 	spriteOffset = new b2Vec2[spriteCount];
 	
+	save_hitsReceived = new ActorHit[hitsReceivedCap];
+	save_bodyCollisions = new ActorCollision[bodyCollisionsCap];
+	save_actorsAttacked = new ActorHitOffense[actorsAttackedCap];
+	save_spriteOffset = new b2Vec2[spriteCount];
+
 	spriteIsEnabled = new bool[spriteCount];
+
+	save_spriteIsEnabled = new bool[spriteCount];
 
 	for( int i = 0; i < spriteCount; ++i )
 	{
@@ -108,6 +115,7 @@ void ActorParams::CreateBox( uint32 tag, int layer,
 	fdef.friction = 0;
 	fdef.density = 1;
 	body->CreateFixture( &fdef );	
+
 }
 
 void ActorParams::CreateCircle( uint32 tag, int layer, 
@@ -282,4 +290,92 @@ void ActorParams::ClearActorsAttacked()
 {
 	actorsAttackedSize = 0;
 	actorsAttackedIndex = 0;
+}
+
+void ActorParams::SaveState()
+{
+	save_isAlive = isAlive;
+	save_friction = m_friction;
+	save_restitution = m_restitution;
+	save_paused = m_paused;
+	save_hitsReceivedSize = hitsReceivedSize;
+	for( int i = 0; i < save_hitsReceivedSize; ++i )
+	{
+		save_hitsReceived[i] = hitsReceived[i]; 
+	}
+	save_bodyCollisionsSize = bodyCollisionsSize;
+	for( int i = 0; i < save_bodyCollisionsSize; ++i )
+	{
+		save_bodyCollisions[i] = bodyCollisions[i];
+	}
+	save_actorsAttackedSize = actorsAttackedSize;
+	save_actorsAttackedIndex = actorsAttackedIndex;
+	for( int i = 0; i < owner->spriteCount; ++i )
+	{
+		save_spriteIsEnabled[i] = spriteIsEnabled[i];
+		save_spriteOffset[i] = spriteOffset[i];
+	}
+	save_position = body->GetPosition();
+	save_velocity = GetVelocity();
+	save_angle = body->GetAngle();
+	
+
+	b2PolygonShape *s = NULL;
+	b2Vec2 *vecs = NULL;
+	b2PolygonShape *newPolygonShape = NULL;
+	b2CircleShape *cs = NULL;
+	b2CircleShape *newCircleShape = NULL;
+
+	b2Fixture *f = body->GetFixtureList();
+
+	while( f != NULL )
+	{
+		
+		b2Shape *shape = f->GetShape();
+		//b2Shape *newShape = NULL;
+		switch( shape->GetType() )
+		{
+			case b2Shape::e_circle:
+				cs = (b2CircleShape*)shape;
+				newCircleShape = new b2CircleShape;
+				newCircleShape->m_radius = cs->m_radius;
+				newCircleShape->m_p = cs->m_p;
+
+				save_fixtureDefs.push_back( b2FixtureDef() );
+				save_fixtureDefs.back().shape = newCircleShape;
+				break;
+			case b2Shape::e_polygon:
+				s = (b2PolygonShape*)shape;
+				vecs = new b2Vec2[s->GetVertexCount()];
+				for( int i = 0; i < 4; ++i )
+				{
+					vecs[i] = s->m_vertices[i];
+				}
+
+				newPolygonShape = new b2PolygonShape;
+				newPolygonShape->Set( vecs, s->m_vertexCount );
+
+				save_fixtureDefs.push_back( b2FixtureDef() );
+				save_fixtureDefs.back().shape = newPolygonShape;
+				break;
+			default:
+				assert( 0 );
+				break;
+		}
+
+		b2FixtureDef &fd = save_fixtureDefs.back();
+		fd.density = f->GetDensity();
+		fd.filter = f->GetFilterData();
+		fd.friction = f->GetFriction();
+		fd.isSensor = f->IsSensor();
+		fd.restitution = f->GetRestitution();
+		fd.userData = f->GetUserData();
+
+		f = f->GetNext();
+	}
+	
+}
+
+void ActorParams::LoadState()
+{
 }

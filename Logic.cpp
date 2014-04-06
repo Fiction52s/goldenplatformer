@@ -228,6 +228,7 @@ int main()
 	levelFiles[0] = "design";
 	levelFiles[1] = "design2";//"t1-3-1";//"design";//"t2-1";
 	levelFiles[2] = "design3";
+	levelFiles[3] = "clone_test";
 	//levelFiles[3] = "boss";
 
 	

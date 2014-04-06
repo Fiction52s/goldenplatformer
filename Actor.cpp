@@ -93,6 +93,18 @@ void PlayerChar::SetCarryVelocity( float x, float y )
 	carryVel.Set( x, y );
 }
 
+void PlayerChar::SaveState()
+{
+	save_carryVel = carryVel;
+	SingleActor::SaveState();
+}
+
+void PlayerChar::LoadState()
+{
+	carryVel = save_carryVel;
+	SingleActor::LoadState();
+}
+
 TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2Vec2 &vel, 
 	bool facingRight, bool reverse, float32 angle, TrueActor *parent, Stage*st )
 	:stage( st ), parent( parent ), facingRight( facingRight ), isReversed( reverse ),
@@ -206,7 +218,8 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addFunction( "SetCameraZoom", &Stage::SetCameraZoom )
 				.addFunction( "HasPlayerPower", &Stage::HasPlayerPower )
 				.addData( "player", &Stage::player )
-				
+				.addData( "cloneWorldStart", &Stage::cloneWorldStart )
+				.addData( "cloneWorld", &Stage::cloneWorld )
 			.endClass()
 		.endNamespace();
 
@@ -498,5 +511,31 @@ int TrueActor::Message( TrueActor *sender, const std::string &msg, float tag )
 bool TrueActor::IsReversed()
 {
 	return isReversed;
+}
+
+void TrueActor::SaveState()
+{
+	save_restitution = restitution;
+	save_density = density;
+	save_facingRight = facingRight;
+	save_isAlive = isAlive;
+	save_isReversed = isReversed;
+	uint32 save_health = health;
+
+	lua_getglobal( L, "SaveState" );
+	lua_pcall( L, 0, 0, 0 );
+}
+
+void TrueActor::LoadState()
+{
+	restitution = save_restitution;
+	density = save_density;
+	facingRight = save_facingRight;
+	isAlive = save_isAlive;
+	isReversed = save_isReversed;
+	health = save_health;
+
+	lua_getglobal( L, "LoadState" );
+	lua_pcall( L, 0, 0, 0 );
 }
 

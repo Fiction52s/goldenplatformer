@@ -16,14 +16,26 @@ SingleActor::SingleActor( const std::string &actorType, const b2Vec2 &pos, const
 
 	isGroup = false;
 	sprite = new sf::Sprite*[ spriteCount ];
-	//spriteIsEnabled = new bool[ spriteCount ];
 	m_spriteAngle = new float32[ spriteCount ];
+	//spriteIsEnabled = new bool[ spriteCount ];
+
+	save_sprite = new sf::Sprite*[spriteCount];	
+	save_spriteAngle = new float32[ spriteCount ];
+
+
 	for( int i = 0; i < spriteCount; ++i )
 	{
 		//spriteIsEnabled[i] = false;
 		m_spriteAngle[i] = 0;
 		sprite[i] = new sf::Sprite();
+
+		//save_spriteAngle[i] = 0;
+		save_sprite[i] = new sf::Sprite();
+		
 	}
+
+
+
 	actorParams = new ActorParams( 0, facingRight, reverse, pos, vel, angle, spriteCount, 
 		hitsReceivedCap, bodyCollisionsCap, actorsAttackedCap, this );
 
@@ -449,4 +461,30 @@ float SingleActor::GetBodyAngle()
 b2Body * SingleActor::GetBody()
 {
 	return actorParams->body;
+}
+
+void SingleActor::SaveState()
+{
+	for( int i = 0; i < spriteCount; ++i )
+	{
+		save_spriteAngle[i] = m_spriteAngle[i];
+		//(*(save_sprite[i])). *sprite;
+	//	(*(save_sprite[i])) = *sprite;
+	//	save_sprite[i]->
+	}
+	TrueActor::SaveState();
+}
+
+void SingleActor::LoadState()
+{
+	for( int i = 0; i < spriteCount; ++i )
+	{
+		m_spriteAngle[i] = save_spriteAngle[i];
+		//(*(save_sprite[i])). *sprite;
+	//	(*(save_sprite[i])) = *sprite;
+	//	save_sprite[i]->
+	}
+
+	TrueActor::LoadState();
+
 }

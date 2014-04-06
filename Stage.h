@@ -92,11 +92,12 @@ public:
 	//{
 	//	NORMAL,
 	//	RUMBLE,
-
+	
 	bool exitRoom;
 	uint32 playerPowers;
 	uint32 lives;
 	Camera c;
+	Camera cloneCamera;
 	//};
 	void ResetCamera();
 	void UpdateCamera();
@@ -222,7 +223,15 @@ private:
 	std::list<TrueActor*> activeActors;
 	std::list<TrueActor*> allActors;
 	std::list<TrueActor*> addedActors;
+
 	
+	std::list<TrueActor*> save_addedActors;
+	std::list<std::string> save_consumed;
+	std::list<StageCollision> save_collisions;
+	ControllerState save_prevInput;
+	
+
+
 	int testPlayerDeathCount;
 	
 	ControllerState storedInput; //for pauses,etc
@@ -237,7 +246,25 @@ private:
 	
 	void RoomRestart();
 	void LevelRestart();
+
+
+	std::list<TrueActor*> cloneAddedActors;
+	std::list<TrueActor*> cloneActiveActors;
+	std::list<TrueActor*> cloneKilledActors;
+	
+
+	void EnterCloneWorld();
+	//void CollapseCloneWorld();
+	void RevertCloneWorld();
+	
+	//void ExtraCloneWorld();
+
+	//void SaveState();
+	//void LoadState();
+
 public:
+	bool cloneWorld;
+	bool cloneWorldStart;
 	static void InitStaticVars( sf::RenderWindow * win );
 	static sf::Texture *pauseBGTexture;
 	static sf::Sprite *pauseBGSprite;
