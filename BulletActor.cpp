@@ -102,6 +102,24 @@ void BulletActor::Draw( sf::RenderTarget *target )
 	
 }
 
+void BulletActor::CloneDraw( sf::RenderTarget *target )
+{	
+	/*target->draw( trailArray );
+	for( int i = 0; i < spriteCount; ++i )
+	{
+		sf::RenderStates states( stage->tileSets[tileSetIndex]->texture );
+		//transform[i] = sf::Transform::Identity;
+	//	if( parent != NULL )
+
+			//transform[i].rotate( 5, parent->GetPosition().x * BOX2SF, parent->GetPosition().y * BOX2SF );
+		//transform[i].rotate( 1 );
+		states.transform = transform[i];
+		target->draw( vertexArray[i], states );
+	}*/
+	//UpdateTrails();
+	
+}
+
 void BulletActor::UpdatePostPhysics()
 {
 	//UpdateTrails();

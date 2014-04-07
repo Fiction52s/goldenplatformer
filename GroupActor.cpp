@@ -138,6 +138,23 @@ void GroupActor::Draw( sf::RenderTarget *target )
 	}
 }
 
+void GroupActor::CloneDraw( sf::RenderTarget *target )
+{
+	/*for( int i = 0; i < spriteCount; ++i )
+	{
+		sf::RenderStates states( stage->tileSets[tileSetIndex]->texture );
+		//transform[i] = sf::Transform::Identity;
+	//	if( parent != NULL )
+
+			//transform[i].rotate( 5, parent->GetPosition().x * BOX2SF, parent->GetPosition().y * BOX2SF );
+		//transform[i].rotate( 1 );
+		states.transform = transform[i];
+		target->draw( vertexArray[i], states );
+	}*/
+}
+
+
+
 void GroupActor::ClearHitboxes()
 {
 	actorParams[actorIndex]->ClearHitboxes();

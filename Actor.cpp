@@ -26,8 +26,11 @@ ActorDef::ActorDef()
 PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 		bool facingRight, bool reverse, float32 angle,
 		TrueActor *parent, Stage *st )
-		:SingleActor( "player", pos, vel, facingRight, reverse, angle, parent, st )
+		:SingleActor( "player", pos, vel, facingRight, reverse, angle, parent, st ),
+		maxGhostCount( 4 ), ghostCount( 0 )
 {
+	ghosts = new PlayerGhost[maxGhostCount];
+
 	if( !playerShader.loadFromFile( "Resources/Actors/player/firstvertex.vert", 
 		"Resources/Actors/player/firstfrag.frag" ) )
 	{
@@ -65,6 +68,12 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 				.addFunction( "Down", &ControllerState::Down )
 				.addFunction( "Left", &ControllerState::Left )
 				.addFunction( "Right", &ControllerState::Right )
+				.addFunction( "AltUp", &ControllerState::AltUp )
+				.addFunction( "AltDown", &ControllerState::AltDown )
+				.addFunction( "AltLeft", &ControllerState::AltLeft )
+				.addFunction( "AltRight", &ControllerState::AltRight )
+				//.addFunction( "", &ControllerState::
+				
 			.endClass()
 		.endNamespace();
 
@@ -236,6 +245,7 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addData( "cloneWorld", &Stage::cloneWorld )
 				.addData( "cloneWorldRevert", &Stage::cloneWorldRevert )
 				.addData( "cloneWorldCollapse", &Stage::cloneWorldCollapse )
+				.addData( "cloneWorldExtra", &Stage::cloneWorldExtra )
 			.endClass()
 		.endNamespace();
 
@@ -547,6 +557,8 @@ void TrueActor::LoadState()
 	restitution = save_restitution;
 	density = save_density;
 	facingRight = save_facingRight;
+	if( facingRight ) FaceRight();
+	else FaceLeft();
 	isAlive = save_isAlive;
 	isReversed = save_isReversed;
 	health = save_health;

@@ -61,16 +61,23 @@ struct Room;
 struct Door;
 
 class Stage;
+
+
+
 struct Camera
 {
-	Camera( Stage *stage );
+	
 	enum CameraMode
 	{
 		normal,
 		transition,
+		frozen,
 		special,
 		hybrid
 	};
+
+	Camera( Stage *stage );
+	
 	b2Vec2 pos;
 	b2Vec2 offset;
 	b2Vec2 maxOffset;
@@ -78,11 +85,13 @@ struct Camera
 	
 	sf::Vector2f GetViewPos();
 	void UpdatePosition( Room * currentRoom );
+	void UpdateZoom();
 	void Reset();
 	CameraMode mode;
 	Stage *stage;
-
+	float maxZoom;
 	float32 zoom;
+	uint32 slowCounter;
 };
 
 class Stage
@@ -225,7 +234,7 @@ private:
 	std::list<TrueActor*> addedActors;
 
 	
-	std::list<TrueActor*> save_addedActors;
+	
 	std::list<std::string> save_consumed;
 	std::list<StageCollision> save_collisions;
 	ControllerState save_prevInput;
@@ -256,6 +265,7 @@ private:
 	void EnterCloneWorld();
 	void CollapseCloneWorld();
 	void RevertCloneWorld();
+	void ExtraCloneWorld();
 	
 	//void ExtraCloneWorld();
 
@@ -267,6 +277,7 @@ public:
 	bool cloneWorldStart;
 	bool cloneWorldRevert;
 	bool cloneWorldCollapse;
+	bool cloneWorldExtra;
 	static void InitStaticVars( sf::RenderWindow * win );
 	static sf::Texture *pauseBGTexture;
 	static sf::Sprite *pauseBGSprite;

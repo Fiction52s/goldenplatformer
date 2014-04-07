@@ -67,7 +67,7 @@ sf::IntRect TileSet::GetSubRect( uint32 localID )
 }
 
 Camera::Camera( Stage *stage )
-	:offsetSpeed( .1 ), mode( normal ), stage( stage )
+	:offsetSpeed( .1 ), mode( normal ), stage( stage ), maxZoom( 2 ), zoom( 1 ), slowCounter( 0 )
 {
 	//UpdatePosition();
 	offset.x = 0;
@@ -87,6 +87,57 @@ void Camera::Reset()
 {
 	offset.SetZero();
 
+}
+
+void Camera::UpdateZoom()
+{
+	if( mode != frozen )
+	{
+		//zoom = stage->GetCameraZoom();
+		PlayerChar *player = stage->player;
+		float xVelAbs = abs( player->GetVelocity().x - player->GetCarryVelocity().x );
+		float zoomGoal = 1 + xVelAbs * .02;
+		
+	
+		if( abs( player->GetVelocity().y ) >= 44 )
+		{
+			zoom += .02;
+		}
+
+		bool zoomedOut = false;
+		if( xVelAbs > 17 )
+		{
+			zoomedOut = true;
+			slowCounter = 0;
+			if( zoomGoal > zoom )
+			{
+				zoom += .01;
+				if( zoom > zoomGoal ) zoom = zoomGoal;
+			}
+		}
+		else
+		{
+			zoomGoal = 1;
+		}
+
+		if( zoomGoal < zoom && !zoomedOut )
+		{
+			slowCounter++;
+			if( slowCounter > 5 )
+			{
+				zoom -= .01;
+				if( zoom < zoomGoal ) zoom = zoomGoal;
+			}
+		}
+
+		if( zoom > maxZoom ) zoom = maxZoom;
+	}
+	else
+	{
+	}
+
+	//stage->SetCameraZoom( zoom );
+	//cout << "zoom : " << zoom << endl;
 }
 
 void Camera::UpdatePosition( Room * currentRoom )
@@ -268,6 +319,8 @@ void Camera::UpdatePosition( Room * currentRoom )
 			stage->mapView.setCenter( viewPos );
 
 			break;
+		case frozen:
+			break;
 		default:
 			assert( 0 && "not working" );
 			break;
@@ -292,6 +345,9 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	
 	cloneWorldRevert = false;
 	cloneWorldCollapse = false;
+	cloneWorldExtra = false;
+
+	ghostVisibility = 80;
 
 	playerPowers = 0;
 
@@ -322,7 +378,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	camera.SetZero();
 	follow.SetZero();
 	camMaxVel.Set( 20, 20 );
-	cameraZoom = 1;
+	//cameraZoom = 1;
 
 	L = luaL_newstate();
 	luaL_openlibs( L );
@@ -2450,6 +2506,8 @@ bool Stage::UpdatePrePhysics()
 					if( cloneWorld )
 					{
 						cloneKilledActors.push_back( a );
+						a->SetPause( true );
+						
 					}
 					else
 					{
@@ -2598,6 +2656,8 @@ bool Stage::UpdatePrePhysics()
 
 	lua_getglobal( L, "UpdatePrePhysics" );
 	lua_pcall( L, 0, 0, 0 );
+
+	c.UpdateZoom();
 
 	
 
@@ -2831,6 +2891,11 @@ bool Stage::Run()
 				bool left = Keyboard::isKeyPressed( Keyboard::Left ) || Keyboard::isKeyPressed( Keyboard::A );
 				bool right = Keyboard::isKeyPressed( Keyboard::Right ) || Keyboard::isKeyPressed( Keyboard::D );
 
+				bool altUp = Keyboard::isKeyPressed( Keyboard::U );
+				bool altLeft = Keyboard::isKeyPressed( Keyboard::H );
+				bool altRight = Keyboard::isKeyPressed( Keyboard::K );
+				bool altDown = Keyboard::isKeyPressed( Keyboard::J );
+
 				ControllerState keyboardInput;    
 				keyboardInput.B = Keyboard::isKeyPressed( Keyboard::X ) || Keyboard::isKeyPressed( Keyboard::Period );
 				keyboardInput.X = Keyboard::isKeyPressed( Keyboard::C ) || Keyboard::isKeyPressed( Keyboard::Comma );
@@ -2839,6 +2904,15 @@ bool Stage::Run()
 				keyboardInput.start = Keyboard::isKeyPressed( Keyboard::Dash );
 				keyboardInput.back = Keyboard::isKeyPressed( Keyboard::Equal );
 				
+
+				if( altRight )
+					currentInput.altPad += 1 << 3;
+				if( altLeft )
+					currentInput.altPad += 1 << 2;
+				if( altUp )
+					currentInput.altPad += 1;
+				if( altDown )
+					currentInput.altPad += 1 << 1;
 				
 				if( up && down )
 				{
@@ -2899,8 +2973,22 @@ bool Stage::Run()
 						currentInput.pad += 1;
 					if( y < -threshold )
 						currentInput.pad += 1 << 1;
-					//cout << "x: " << x << endl;
-					//cout << "y: " << y << endl; 
+				}
+
+				if( currentInput.rightStickMagnitude > .4 )
+				{
+					//cout << "left stick radians: " << currentInput.leftStickRadians << endl;
+					float x = cos( currentInput.rightStickRadians );
+					float y = sin( currentInput.rightStickRadians );
+					float threshold = .4;
+					if( x > threshold )
+						currentInput.altPad += 1 << 3;
+					if( x < -threshold )
+						currentInput.altPad += 1 << 2;
+					if( y > threshold )
+						currentInput.altPad += 1;
+					if( y < -threshold )
+						currentInput.altPad += 1 << 1;
 				}
 			}
 
@@ -3170,21 +3258,7 @@ bool Stage::Run()
 			UpdatePostPhysics();
 
 			
-			if( cloneWorldStart )
-			{
-				assert( !cloneWorld );
-				cloneWorldStart = false;
-				EnterCloneWorld();
-			}
-			else if( cloneWorld && !cloneWorldStart && cloneWorldRevert )
-			{
-				cloneWorldRevert = false;
-				RevertCloneWorld();
-			}
-			else if( cloneWorld && !cloneWorldStart && cloneWorldCollapse )
-			{
-				CollapseCloneWorld();
-			}
+			
 			//cout << "posttime: " << testClock.getElapsedTime().asSeconds()<< endl;
 
 		//view
@@ -3320,7 +3394,7 @@ bool Stage::Run()
 		
 		//mapView.setSize( sf::Vector2f( rt.getSize() ) * cameraZoom );
 		//cout << "cameraZoom: " << cameraZoom << endl;
-		sf::Vector2f viewSize( sf::Vector2f( 1920, 1080 ) * cameraZoom );
+		sf::Vector2f viewSize( sf::Vector2f( 1920, 1080 ) * c.zoom );
 		
 		//cout << "viewSize: " << viewSize.x << ", " << viewSize.y << endl;
 		viewSize.x = floor( viewSize.x + .5f );
@@ -3358,7 +3432,7 @@ bool Stage::Run()
 				//sf::Vector2f one = sf::Vector2f( 1920 * 2, 1080 * 2) *  ( ( 2 - ( 2 - cameraZoom ) * sr ) );
 				//sf::Vector2f two = sf::Vector2f( 1920 * 2, 1080 * 2) * ( 2- cameraZoom * sr );
 				sf::Vector2f one = sf::Vector2f( 1920 * 2, 1080 * 2 );
-				one += sf::Vector2f( 1920 * 2, 1080 * 2 ) *  ( cameraZoom - 1 ) * ( sr );
+				one += sf::Vector2f( 1920 * 2, 1080 * 2 ) *  ( c.zoom - 1 ) * ( sr );
 				one -= viewSize - sf::Vector2f(1920, 1080);
 				
 				//one -= sf::Vector2f( 1920, 1080 ) * (cameraZoom - 1 ); //(1 - cameraZoom);
@@ -3527,6 +3601,19 @@ bool Stage::Run()
 		
 		//rt.clear(sf::Color::Red );
 		
+		if( cloneWorld )
+		{
+			for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+			{
+				(*it)->CloneDraw( &rt );
+			}
+
+			for( std::list<TrueActor*>::iterator it = cloneKilledActors.begin(); it != cloneKilledActors.end(); ++it )
+			{
+				(*it)->CloneDraw( &rt );
+			}
+		}
+
 
 		for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 		{
@@ -3848,51 +3935,42 @@ void Stage::UpdatePostPhysics()
 	
 	c.UpdatePosition( currentRoom );
 
-
-	//sf::Vector2f cam( camera.x, camera.y );
-
-	/*sf::Vector2f diff( player->GetPosition().x - camera.x, player->GetPosition().y - camera.y );
-	
-
-	if( abs( diff.x ) < .01 )
-		diff.x = 0;
-	if( abs( diff.y ) < .01)
-		diff.y = 0;
-	if( diff.x > camMaxVel.x * TIMESTEP )
-		diff.x = camMaxVel.x * TIMESTEP;
-	if( diff.x < -camMaxVel.x * TIMESTEP )
-		diff.x = -camMaxVel.x * TIMESTEP;
-	
-	if( diff.y > camMaxVel.y * TIMESTEP )
-		diff.y = camMaxVel.y * TIMESTEP;
-	if( diff.y < -camMaxVel.y * TIMESTEP )
-		diff.y = -camMaxVel.y * TIMESTEP;
-
-
-	
-	cam.x += diff.x * follow.x;
-	cam.y += diff.y * follow.y;*/
-
-	//view.setCenter( c.GetViewPos() );
-//	sf::Vector2f viewPos = c.GetViewPos();
-	//cout << "viewPos: " << viewPos.x * SF2BOX << ", " << viewPos.y * SF2BOX << endl;
 	camera = c.pos;
-	//sf::Vector2f viewPos( cam * BOX2SF );
-	//viewPos.x = floor( viewPos.x + .5f );
-	//viewPos.y = floor( viewPos.y + .5f );
-	//sf::Vector2f diff( cam - view.getCenter() );
-
 	
-	//view.setCenter( viewPos );
-	//mapView.setCenter( viewPos );
-	//mapView.setCenter( viewPos );
-	//view.setRotation( player->GetSpriteAngle() * 180 * 3.5 );
-	//cout << "sprite angle: " << player->GetSpriteAngle() << endl;
+	if( cloneWorld )
+	{
+		PlayerGhost & ghost = player->ghosts[player->ghostCount-1];
+		ghost.recordFrame++;
+	}
 
-	//camera.x = cam.x;
-	//camera.y = cam.y;
+	if( cloneWorldStart )
+	{
+		assert( !cloneWorld );
 
-	
+		PlayerGhost & ghost = player->ghosts[player->ghostCount-1];
+		ghost.recordFrame = 0;
+
+		cloneWorldStart = false;
+		EnterCloneWorld();
+	}
+	else if( cloneWorld && !cloneWorldStart && cloneWorldRevert )
+	{
+		cloneWorldRevert = false;
+		RevertCloneWorld();
+	}
+	else if( cloneWorld && !cloneWorldStart && cloneWorldCollapse )
+	{
+		cloneWorldCollapse = false;
+		CollapseCloneWorld();
+	}
+	else if( cloneWorld && !cloneWorldStart && cloneWorldExtra )
+	{
+		cloneWorldExtra = false;
+		ExtraCloneWorld();
+	}
+
+
+
 	
 	
 
@@ -3902,6 +3980,42 @@ void Stage::UpdatePostPhysics()
 		{
 			(*it)->UpdateSprites();
 		}
+	}
+
+	if( cloneWorld )
+	{
+	//	for( int i = 0; i < player->ghostCount; ++i )
+	//	{
+		PlayerGhost & ghost = player->ghosts[player->ghostCount-1];
+		player->ghosts[i].sprites.push_back( sf::Sprite() );
+		sf::Sprite &spr = ghost.sprites.back();
+
+
+		for( int i = 0; i < player->spriteCount; ++i )
+		{
+			spr.setScale( player->sprite[i]->getScale() );
+			spr.setOrigin( player->sprite[i]->getOrigin() );
+			spr.setPosition( player->sprite[i]->getPosition() );
+			spr.setRotation( player->sprite[i]->getRotation() );
+			spr.setTexture( *(player->sprite[i]->getTexture()) );
+			spr.setTextureRect( player->sprite[i]->getTextureRect() );
+			sf::Color col = player->sprite[i]->getColor();
+			//if( col.a > maxGhostVisibility )
+			//{
+			//	col.a -= maxGhostVisibility;
+			//}
+			col.a = ghostVisibility;
+			spr.setColor( col );
+		}
+
+		ghost.position.push_back( player->GetPosition() );
+		
+
+			
+			
+			
+//		}
+		
 	}
 
 	
@@ -3923,14 +4037,14 @@ void Stage::SetCameraZoom( float zoom )
 	//cout << "setting zoom to: " << zoom << endl;
 	//1920 x 1080
 	//view.setSize( xxxxx * zoom, yyyyy * zoom );
-	cameraZoom = zoom;
+	//cameraZoom = zoom;
 	c.zoom = zoom;
 	//view.zoom( zoom );
 }
 
 float Stage::GetCameraZoom()
 {
-	return cameraZoom;
+	return c.zoom;
 }
 
 void Stage::DebugDraw( sf::RenderTarget *rt )
@@ -3939,6 +4053,13 @@ void Stage::DebugDraw( sf::RenderTarget *rt )
 	//vector<sf::Shape> stuff;
 	for( int i = 0; i < world->GetBodyCount(); ++i )
 	{
+		if( !bodies->IsActive() )
+		{
+			bodies = bodies->GetNext();
+			continue;
+		}
+
+
 		b2Fixture * fixtures = bodies->GetFixtureList();
 		
 		while (fixtures != NULL )
@@ -4946,6 +5067,7 @@ void Stage::EnterCloneWorld()
 	assert( !cloneWorld );
 
 	cloneWorld = true;
+	//c.mode = Camera::CameraMode::frozen;
 
 	//lua_getglobal( L, "SaveState" );
 	//lua_pcall( player->L, 0, 0, 0 );
@@ -4982,6 +5104,7 @@ void Stage::RevertCloneWorld()
 	assert( cloneWorld );
 
 	cloneWorld = false;
+	
 
 	//lua_getglobal( L, "Load" );
 	//lua_pcall( player->L, 0, 0, 0 );
@@ -4994,8 +5117,10 @@ void Stage::RevertCloneWorld()
 
 	for( list<TrueActor*>::iterator it = cloneKilledActors.begin(); it != cloneKilledActors.end(); ++it )
 	{
+		
 		activeActors.push_back( (*it) );
 	}
+	cloneKilledActors.clear();
 
 	for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 	{
@@ -5029,12 +5154,22 @@ void Stage::RevertCloneWorld()
 
 	c = cloneCamera;
 
+	sf::Vector2f viewPos = c.GetViewPos();
+	view.setCenter( viewPos );
+	mapView.setCenter( viewPos );
+	//c.UpdateZoom();
+	//c.UpdatePosition();
+	
+	//c.mode = Camera::CameraMode::normal;
 	
 	cloneKilledActors.clear();
 }
 
 void Stage::CollapseCloneWorld()
 {
+	cloneWorld = false;
+	//c.mode = Camera::CameraMode::normal;
+
 	addedActors.clear();
 	for( list<TrueActor*>::iterator it = cloneAddedActors.begin(); it != cloneAddedActors.end(); ++it )
 	{
@@ -5055,5 +5190,14 @@ void Stage::CollapseCloneWorld()
 	}
 	cloneKilledActors.clear();
 
-	cloneWorld = false;
+	
+}
+
+void Stage::ExtraCloneWorld()
+{
+	RevertCloneWorld();
+	cloneWorld = true;
+	//c.mode = Camera::CameraMode::normal;
+
+	
 }

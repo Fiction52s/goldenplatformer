@@ -331,6 +331,8 @@ struct TrueActor : public b2RayCastCallback //change this later
 
 	virtual void Draw( sf::RenderTarget *target ) = 0;
 
+	virtual void CloneDraw( sf::RenderTarget *target ) = 0;
+
 	virtual void ClearHitboxes() = 0;
 
 	virtual void ClearHurtboxes() = 0;
@@ -499,7 +501,9 @@ struct SingleActor : public TrueActor
 
 	//clone stuff
 	sf::Sprite **save_sprite;
+	sf::Color *save_color;
 	float32 *save_spriteAngle;
+	//end clone stuff
 
 
 	SingleActor( const std::string &actorType,
@@ -524,6 +528,8 @@ struct SingleActor : public TrueActor
 	float GetBodyAngle();
 
 	virtual void Draw( sf::RenderTarget *target );
+
+	virtual void CloneDraw( sf::RenderTarget *target );
 
 	void ClearHitboxes();
 
@@ -622,6 +628,34 @@ struct SingleActor : public TrueActor
 
 };
 
+struct HitboxInfo
+{
+	HitboxInfo(bool circle, uint32 tag, 
+		float32 offsetX, float32 offsetY, 
+		float32 width, float32 height,
+		float32 angle);
+	bool circle; //otherwise its a box
+	uint32 tag;
+	float32 offsetX;
+	float32 offsetY;
+	float32 width;
+	float32 height;
+	float32 angle;
+};
+
+struct PlayerGhost
+{
+	PlayerGhost( Stage *stage );
+	std::list< std::pair< uint32, 
+		std::list<HitboxInfo>> > hitboxes;
+	std::list<sf::Sprite> sprites;
+	std::list<b2Vec2> position;
+	uint32 recordFrame;
+	uint32 playFrame;
+	b2Body* body;
+};
+
+
 struct PlayerChar: public SingleActor
 {
 	PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
@@ -631,6 +665,7 @@ struct PlayerChar: public SingleActor
 	void SetCarryVelocity( float x, float y);
 	virtual ~PlayerChar();
 	void Draw( sf::RenderTarget *target );
+	//virtual void CloneDraw( sf::RenderTarget *target );
 	ControllerState currentInput;
 	ControllerState prevInput;
 	sf::Shader playerShader;
@@ -638,6 +673,11 @@ struct PlayerChar: public SingleActor
 	b2Vec2 carryVel;
 
 	b2Vec2 save_carryVel;
+
+	PlayerGhost *ghosts;
+	uint32 ghostCount;
+	uint32 maxGhostCount;
+	uint8 ghostVisibility;
 
 	virtual void SaveState();
 	virtual void LoadState();
@@ -704,6 +744,8 @@ struct GroupActor : public TrueActor
 	void SetOrigin( float x, float y );
 
 	virtual void Draw( sf::RenderTarget *target );
+
+	virtual void CloneDraw( sf::RenderTarget *target );
 
 	void UpdateSprites();
 
@@ -820,6 +862,7 @@ struct BulletActor: public GroupActor
 	virtual void Init( b2World *p_world );
 	virtual ~BulletActor();
 	virtual void Draw( sf::RenderTarget *target );
+	virtual void CloneDraw( sf::RenderTarget *target );
 	virtual void UpdatePostPhysics();
 	void ClearTrail();
 	void SetTrailOn( bool on );

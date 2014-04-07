@@ -15,7 +15,7 @@ ControllerState::ControllerState()
 	:leftStickMagnitude( 0 ), leftStickRadians( 0 ), rightStickMagnitude( 0 ), 
 	rightStickRadians( 0 ), leftTrigger( 0 ), rightTrigger( 0 ), start( false ), 
 	back( false ), leftShoulder( false ), rightShoulder( false ), A( false ), B( false ), 
-	X( false ), Y( false ), pad( 0 )
+	X( false ), Y( false ), pad( 0 ), altPad( 0 )
 {}
 
 void ControllerState::Set( const ControllerState &state )
@@ -35,6 +35,7 @@ void ControllerState::Set( const ControllerState &state )
 	X = state.X;
 	Y = state.Y;
 	pad = state.pad;
+	altPad = state.altPad;
 }
 
 bool ControllerState::Up()
@@ -55,6 +56,26 @@ bool ControllerState::Left()
 bool ControllerState::Right()
 {
 	return pad & 8;
+}
+
+bool ControllerState::AltUp()
+{
+	return altPad & 1;
+}
+
+bool ControllerState::AltDown()
+{
+	return altPad & 2;
+}
+
+bool ControllerState::AltLeft()
+{
+	return altPad & 4;
+}
+
+bool ControllerState::AltRight()
+{
+	return altPad & 8;
 }
 
 bool GameController::UpdateState()

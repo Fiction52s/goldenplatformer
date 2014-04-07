@@ -21,13 +21,14 @@ SingleActor::SingleActor( const std::string &actorType, const b2Vec2 &pos, const
 
 	save_sprite = new sf::Sprite*[spriteCount];	
 	save_spriteAngle = new float32[ spriteCount ];
-
+	save_color = new sf::Color[ spriteCount ];
 
 	for( int i = 0; i < spriteCount; ++i )
 	{
 		//spriteIsEnabled[i] = false;
 		m_spriteAngle[i] = 0;
 		sprite[i] = new sf::Sprite();
+		
 
 		//save_spriteAngle[i] = 0;
 		save_sprite[i] = new sf::Sprite();
@@ -52,10 +53,15 @@ SingleActor::~SingleActor()
 	for( int i = 0; i < spriteCount; ++i )
 	{
 		delete sprite[i];
+		delete save_sprite[i];
 	}
 	delete [] sprite;
+	delete [] save_sprite;
 	delete [] m_spriteAngle;
+	delete [] save_spriteAngle;
 	//delete [] spriteIsEnabled;
+
+	
 
 	delete actorParams;
 }
@@ -152,6 +158,19 @@ void SingleActor::Draw( sf::RenderTarget *target )
 	}
 }
 
+void SingleActor::CloneDraw( sf::RenderTarget *target )
+{
+	for( int i = 0; i < spriteCount; ++i )
+	{
+		if( actorParams->save_spriteIsEnabled[i] )
+		{
+			target->draw( *(save_sprite[i]) );
+		}
+	}
+}
+
+
+
 void SingleActor::ClearHitboxes()
 {
 	actorParams->ClearHitboxes();
@@ -172,11 +191,33 @@ void SingleActor::ClearDetectionboxes()
 	actorParams->ClearDetectionboxes();
 }
 
+HitboxInfo::HitboxInfo( bool circle, uint32 tag, float32 offsetX, float32 offsetY, float32 width, float32 height,
+	float32 angle )
+	:circle( circle ), tag( tag ), offsetX( offsetX ), offsetY( offsetY ), width( width ), height( height ), 
+	angle( angle )
+{
+
+}
+
+PlayerGhost::PlayerGhost( Stage *stage )
+	:recordFrame( 0 ), playFrame( 0 ), body( NULL )
+{
+	b2BodyDef d;
+	d.type = b2BodyType::b2_staticBody;
+	d.active = false;
+	//d.bullet = true;
+	d.angle = 0;
+	d.fixedRotation = true;
+	d.position = stage->player->GetPosition();
+	body = stage->world->CreateBody( &d );
+}
+
 void SingleActor::CreateBox( uint32 tag, int layer, 
 	float32 offsetX, float32 offsetY, 
 	float32 width, float32 height, 
 	float32 angle )
 {
+	
 	actorParams->CreateBox( tag, layer, offsetX, offsetY, width, height, angle );
 }
 
@@ -271,6 +312,7 @@ bool SingleActor::ProcessCollisions()
 
 void SingleActor::UpdateSprites()
 {
+	//cout << "update sprites" << endl;
 	for( int i = 0; i < spriteCount; ++i )
 	{
 		float a = m_spriteAngle[i] / PI;
@@ -468,7 +510,21 @@ void SingleActor::SaveState()
 	for( int i = 0; i < spriteCount; ++i )
 	{
 		save_spriteAngle[i] = m_spriteAngle[i];
-		//(*(save_sprite[i])). *sprite;
+		save_sprite[i]->setScale( sprite[i]->getScale() );
+		save_sprite[i]->setOrigin( sprite[i]->getOrigin() );
+		save_sprite[i]->setPosition( sprite[i]->getPosition() );
+		save_sprite[i]->setRotation( sprite[i]->getRotation() );
+		
+		save_sprite[i]->setTexture( *(sprite[i]->getTexture()) );
+		save_sprite[i]->setTextureRect( sprite[i]->getTextureRect() );
+		sf::Color color = sprite[i]->getColor();
+		save_color[i] = color;
+		color.a = 80;
+		save_sprite[i]->setColor( color );
+
+		
+		
+		//(*(save_sprite[i])) *sprite;
 	//	(*(save_sprite[i])) = *sprite;
 	//	save_sprite[i]->
 	}
@@ -483,9 +539,15 @@ void SingleActor::LoadState()
 	for( int i = 0; i < spriteCount; ++i )
 	{
 		m_spriteAngle[i] = save_spriteAngle[i];
-		//(*(save_sprite[i])). *sprite;
-	//	(*(save_sprite[i])) = *sprite;
-	//	save_sprite[i]->
+
+		sprite[i]->setScale( save_sprite[i]->getScale() );
+		sprite[i]->setOrigin( save_sprite[i]->getOrigin() );
+		sprite[i]->setPosition( save_sprite[i]->getPosition() );
+		sprite[i]->setRotation( save_sprite[i]->getRotation() );
+		sprite[i]->setTexture( *(save_sprite[i]->getTexture()) );
+		sprite[i]->setTextureRect( save_sprite[i]->getTextureRect() );
+		sprite[i]->setColor( save_color[i] );
+
 	}
 
 	actorParams->LoadState();

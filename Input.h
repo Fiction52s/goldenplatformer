@@ -34,11 +34,16 @@ struct ControllerState
 	bool X;
 	bool Y;
 	sf::Uint8 pad;
+	sf::Uint8 altPad;
 	bool Up();
 	bool Down();
 	bool Left();
 	bool Right();//0x1 = up, 0x2 = down, 0x4 = left, 
 				 //0x8 = right
+	bool AltUp();
+	bool AltDown();
+	bool AltLeft();
+	bool AltRight();
 };
 
 

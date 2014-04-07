@@ -209,6 +209,8 @@ float32 ActorParams::GetRestitution()
 void ActorParams::SetPause( bool pause )
 {
 	m_paused = pause;
+	body->SetActive( !pause );
+	
 }
 
 bool ActorParams::IsPaused()
@@ -294,6 +296,7 @@ void ActorParams::ClearActorsAttacked()
 
 void ActorParams::SaveState()
 {
+	
 	save_isAlive = isAlive;
 	save_friction = m_friction;
 	save_restitution = m_restitution;
@@ -327,6 +330,8 @@ void ActorParams::SaveState()
 	b2CircleShape *newCircleShape = NULL;
 
 	b2Fixture *f = body->GetFixtureList();
+
+	save_fixtureDefs.clear();
 
 	while( f != NULL )
 	{
@@ -378,11 +383,12 @@ void ActorParams::SaveState()
 
 void ActorParams::LoadState()
 {
-	cout << "load state: " << owner->actorType << endl;
+	//cout << "load state: " << owner->actorType << endl;
 	isAlive = save_isAlive;
 	m_friction = save_friction;
 	m_restitution = save_restitution;
-	m_paused = save_paused;
+	SetPause( save_paused );
+	//m_paused = save_paused;
 	hitsReceivedSize = save_hitsReceivedSize;
 	for( int i = 0; i < hitsReceivedSize; ++i )
 	{
@@ -402,7 +408,9 @@ void ActorParams::LoadState()
 		spriteIsEnabled[i] = save_spriteIsEnabled[i];
 		spriteOffset[i] = save_spriteOffset[i];
 	}
+	cout << "position: " << GetPosition().x << ", " << GetPosition().y << endl;
 	SetPosition( save_position.x, save_position.y );
+	cout << "new position: " << GetPosition().x << ", " << GetPosition().y << endl;
 	SetBodyAngle( save_angle );
 	SetVelocity( save_velocity.x, save_velocity.y );
 
