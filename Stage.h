@@ -286,6 +286,9 @@ public:
 
 	static sf::Font debugFont;
 	static int selectedPauseMenu;
+
+	uint32 freezeFrames;
+	void Freeze( uint32 frames );
 };
 
 #endif

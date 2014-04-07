@@ -27,9 +27,16 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 		bool facingRight, bool reverse, float32 angle,
 		TrueActor *parent, Stage *st )
 		:SingleActor( "player", pos, vel, facingRight, reverse, angle, parent, st ),
-		maxGhostCount( 4 ), ghostCount( 0 )
+		maxGhostCount( 8 ), ghostCount( 0 )
 {
-	ghosts = new PlayerGhost[maxGhostCount];
+	ghosts = new PlayerGhost*[maxGhostCount];
+	for( int i = 0; i < maxGhostCount; ++i )
+	{
+		ghosts[i] = new PlayerGhost( st, this );
+	}
+
+
+	ghostVisibility = 150;
 
 	if( !playerShader.loadFromFile( "Resources/Actors/player/firstvertex.vert", 
 		"Resources/Actors/player/firstfrag.frag" ) )
@@ -89,6 +96,32 @@ PlayerChar::~PlayerChar()
 
 void PlayerChar::Draw( sf::RenderTarget *target )
 {
+	if( !stage->cloneWorld )
+	{
+		for( int i = 0; i < ghostCount; ++i )
+		{
+			PlayerGhost &ghost = *(ghosts[i]);
+
+			if( ghost.playFrame < ghost.recordFrame )
+			{
+				//cout << "ghost: " << ghostCount - 1 << ", playframe: " << ghost.playFrame << ", recordframe: " <<
+				//	ghost.recordFrame << endl;
+				assert( !ghost.sprites.empty() );
+				sf::Sprite &spr = ghost.sprites.front();
+
+				//cout << "body pos: "<< ghost.body->GetPosition().x << ", " << ghost.body->GetPosition().y << endl;
+				//cout << "player pos: "<< GetPosition().x << ", " << GetPosition().y << endl;
+				//cout << "sprite position: " << spr.getPosition().x << ", " << spr.getPosition().y << endl;
+				//cout << "player sprite position: " << sprite[0]->getPosition().x << ", " <<
+					//sprite[0]->getPosition().y << endl;
+				//spr.setPosition( sprite[0]->getPosition().x, sprite[0]->getPosition().y );
+				target->draw( spr );
+				//ghost.sprites.pop_front();
+			}
+			
+		}
+	}
+
 	for( int i = spriteCount-1; i >= 0; --i )
 	{
 		if( actorParams->spriteIsEnabled[i] )
@@ -103,6 +136,46 @@ void PlayerChar::Draw( sf::RenderTarget *target )
 			}
 			//target->draw( *(sprite[i]), &playerShader );
 		}
+	}
+
+	
+}
+
+void PlayerChar::CreateBox( uint32 tag, int layer, float32 offsetX, float32 offsetY, float32 width, float32 height, 
+		float32 angle )
+{
+	SingleActor::CreateBox( tag, layer, offsetX, offsetY, width, height, angle );
+	if( stage->cloneWorld && layer == CollisionLayers::PlayerHitbox )
+	{
+		PlayerGhost &ghost = *(ghosts[ghostCount-1]);
+
+		if( ghost.hitboxes.empty() || ghost.hitboxes.back().first < ghost.recordFrame )
+		{
+			ghost.hitboxes.push_back( pair<uint32, list<HitboxInfo>>( ghost.recordFrame, list<HitboxInfo>() ) );
+		}
+		
+		list<HitboxInfo> &hitboxList = ghost.hitboxes.back().second;
+
+		hitboxList.push_back( HitboxInfo( false, tag, offsetX, offsetY, width, height, angle ) );
+	}
+}
+
+void PlayerChar::CreateCircle( uint32 tag, int layer, float32 offsetX, float32 offsetY, float32 radius )
+{
+	SingleActor::CreateCircle( tag, layer, offsetX, offsetY, radius );
+
+	if( stage->cloneWorld && layer == CollisionLayers::PlayerHitbox )
+	{
+		PlayerGhost &ghost = *(ghosts[ghostCount-1]);
+
+		if( ghost.hitboxes.empty() || ghost.hitboxes.back().first < ghost.recordFrame )
+		{
+			ghost.hitboxes.push_back( pair<uint32, list<HitboxInfo>>( ghost.recordFrame, list<HitboxInfo>() ) );
+		}
+		
+		list<HitboxInfo> &hitboxList = ghost.hitboxes.back().second;
+
+		hitboxList.push_back( HitboxInfo( true, tag, offsetX, offsetY, radius, radius, 0 ) );
 	}
 }
 

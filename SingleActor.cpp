@@ -199,8 +199,53 @@ HitboxInfo::HitboxInfo( bool circle, uint32 tag, float32 offsetX, float32 offset
 
 }
 
-PlayerGhost::PlayerGhost( Stage *stage )
-	:recordFrame( 0 ), playFrame( 0 ), body( NULL )
+void PlayerGhost::CreateBox( uint32 tag, float32 offsetX, float32 offsetY, float32 width, float32 height, 
+	float32 angle )
+{
+	body->SetActive( true );
+	b2FixtureDef fdef;
+	b2PolygonShape shape;
+	b2Vec2 offset( offsetX, offsetY );
+	if( player->IsReversed() )
+	{
+		offset.y = -offset.y;
+		angle = -angle;
+	}
+	shape.SetAsBox( width / 2, height / 2, offset, angle );
+	fdef.shape = &shape;
+
+	CollisionLayers::SetupFixture( CollisionLayers::PlayerHitbox, fdef.filter.categoryBits, 
+		fdef.filter.maskBits );
+	
+	fdef.userData = (void*)tag;
+	fdef.friction = 0;
+	fdef.density = 1;
+	body->CreateFixture( &fdef );	
+}
+
+void PlayerGhost::CreateCircle( uint32 tag, float32 offsetX, float32 offsetY, float32 radius )
+{
+	body->SetActive( true );
+	b2FixtureDef fdef;
+	b2CircleShape shape;
+	b2Vec2 offset( offsetX, offsetY );
+	if( player->IsReversed() ) offset.y = -offset.y;
+	shape.m_p = offset;
+	shape.m_radius = radius;
+	fdef.shape = &shape;
+	
+	CollisionLayers::SetupFixture( CollisionLayers::PlayerHitbox, fdef.filter.categoryBits, 
+		fdef.filter.maskBits );
+	
+	fdef.userData = (void*)tag;
+	fdef.friction = 0;
+	fdef.restitution = 0;
+	fdef.density = 1;
+	body->CreateFixture( &fdef );
+}
+
+PlayerGhost::PlayerGhost( Stage *stage, PlayerChar *player )
+	:recordFrame( 0 ), playFrame( 0 ), body( NULL ), player( player )
 {
 	b2BodyDef d;
 	d.type = b2BodyType::b2_staticBody;
@@ -208,7 +253,7 @@ PlayerGhost::PlayerGhost( Stage *stage )
 	//d.bullet = true;
 	d.angle = 0;
 	d.fixedRotation = true;
-	d.position = stage->player->GetPosition();
+	//d.position = stage->player->GetPosition();
 	body = stage->world->CreateBody( &d );
 }
 
@@ -217,7 +262,6 @@ void SingleActor::CreateBox( uint32 tag, int layer,
 	float32 width, float32 height, 
 	float32 angle )
 {
-	
 	actorParams->CreateBox( tag, layer, offsetX, offsetY, width, height, angle );
 }
 

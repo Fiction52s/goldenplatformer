@@ -347,7 +347,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	cloneWorldCollapse = false;
 	cloneWorldExtra = false;
 
-	ghostVisibility = 80;
+	
 
 	playerPowers = 0;
 
@@ -2630,7 +2630,76 @@ bool Stage::UpdatePrePhysics()
 			cloneWorldRevert = true;
 		}
 		assert( player->isAlive );
+
+		
+
 		player->UpdatePrePhysics();
+
+		if( !cloneWorld )
+		{
+			for( int i = 0; i < player->ghostCount; ++i )
+			{
+				PlayerGhost &ghost = *(player->ghosts[i]);
+				if( ghost.playFrame < ghost.recordFrame )
+				{
+					ghost.playFrame++;
+					assert( !ghost.sprites.empty() );
+
+					ghost.sprites.pop_front();
+
+					b2Vec2 p( ghost.position.front() );
+					ghost.position.pop_front();
+					ghost.body->SetTransform( p, 0 );
+
+					b2Fixture *f = ghost.body->GetFixtureList();
+					while( f != NULL )
+					{
+						b2Fixture *toDestroy = f;
+						f = f->GetNext();
+						ghost.body->DestroyFixture( toDestroy );
+					}
+
+					if( ghost.playFrame == ghost.hitboxes.front().first )
+					{
+						list<HitboxInfo> &hitInfoList = ghost.hitboxes.front().second;
+
+						for( list<HitboxInfo>::iterator hIt = hitInfoList.begin();
+							hIt != hitInfoList.end(); ++hIt )
+						{
+							HitboxInfo &hitInfo = (*hIt);
+
+							if( hitInfo.circle )
+							{
+								ghost.CreateCircle( hitInfo.tag, hitInfo.offsetX, hitInfo.offsetY, hitInfo.width );
+							}
+							else
+							{
+								//cout << "create ghost box on frame: " << ghost.playFrame << endl;
+								ghost.CreateBox( hitInfo.tag, hitInfo.offsetX, hitInfo.offsetY, hitInfo.width,
+									hitInfo.height, hitInfo.angle );
+							}
+						}
+
+						
+
+						ghost.hitboxes.pop_front();
+					}
+					else
+					{
+					//	cout << "not a good frame. playframe: " << ghost.playFrame << ", first: " 
+					//		<< ghost.hitboxes.front().first << endl;
+
+					}
+					
+
+					
+				}
+			}
+		}
+		else
+		{
+			player->ghosts[player->ghostCount - 1]->position.push_back( player->GetPosition() );
+		}
 	}
 	
 
@@ -3619,6 +3688,15 @@ bool Stage::Run()
 		{
 			(*it)->Draw( &rt );
 		}
+		
+		if( cloneWorld )
+		{
+			for( std::list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end();
+				++it )
+			{
+				(*it)->Draw( &rt );
+			}
+		}
 
 		if( (*layerIt) == NULL )
 			++layerIt;
@@ -3939,22 +4017,27 @@ void Stage::UpdatePostPhysics()
 	
 	if( cloneWorld )
 	{
-		PlayerGhost & ghost = player->ghosts[player->ghostCount-1];
+		PlayerGhost & ghost = *(player->ghosts[player->ghostCount-1]);
 		ghost.recordFrame++;
+		cout << "ghost: " << player->ghostCount -1 << " record frame: " << ghost.recordFrame << endl;
 	}
 
 	if( cloneWorldStart )
 	{
 		assert( !cloneWorld );
 
-		PlayerGhost & ghost = player->ghosts[player->ghostCount-1];
+		player->ghostCount = 1;
+		PlayerGhost & ghost = *(player->ghosts[player->ghostCount-1]);
 		ghost.recordFrame = 0;
+		ghost.playFrame = 0;
+		//player->ghostCount = 0;
 
 		cloneWorldStart = false;
 		EnterCloneWorld();
 	}
 	else if( cloneWorld && !cloneWorldStart && cloneWorldRevert )
 	{
+
 		cloneWorldRevert = false;
 		RevertCloneWorld();
 	}
@@ -3966,7 +4049,14 @@ void Stage::UpdatePostPhysics()
 	else if( cloneWorld && !cloneWorldStart && cloneWorldExtra )
 	{
 		cloneWorldExtra = false;
-		ExtraCloneWorld();
+		if( player->ghostCount < player->maxGhostCount )
+		{
+			player->ghostCount++;
+			ExtraCloneWorld();
+		}
+
+		
+		
 	}
 
 
@@ -3986,13 +4076,14 @@ void Stage::UpdatePostPhysics()
 	{
 	//	for( int i = 0; i < player->ghostCount; ++i )
 	//	{
-		PlayerGhost & ghost = player->ghosts[player->ghostCount-1];
-		player->ghosts[i].sprites.push_back( sf::Sprite() );
-		sf::Sprite &spr = ghost.sprites.back();
+		PlayerGhost & ghost = *(player->ghosts[player->ghostCount-1]);
+		
 
 
-		for( int i = 0; i < player->spriteCount; ++i )
+		for( int i = 0; i < 1;++i)//player->spriteCount; ++i )
 		{
+			ghost.sprites.push_back( sf::Sprite() );
+			sf::Sprite &spr = ghost.sprites.back();
 			spr.setScale( player->sprite[i]->getScale() );
 			spr.setOrigin( player->sprite[i]->getOrigin() );
 			spr.setPosition( player->sprite[i]->getPosition() );
@@ -4004,11 +4095,12 @@ void Stage::UpdatePostPhysics()
 			//{
 			//	col.a -= maxGhostVisibility;
 			//}
-			col.a = ghostVisibility;
+			col.a = player->ghostVisibility;
 			spr.setColor( col );
 		}
+		
+		
 
-		ghost.position.push_back( player->GetPosition() );
 		
 
 			
@@ -4017,6 +4109,7 @@ void Stage::UpdatePostPhysics()
 //		}
 		
 	}
+
 
 	
 	//view.setCenter( camera.x * SF2BOX, camera.y * SF2BOX );
@@ -5200,4 +5293,8 @@ void Stage::ExtraCloneWorld()
 	//c.mode = Camera::CameraMode::normal;
 
 	
+}
+
+void Stage::Freeze( uint32 frames )
+{
 }

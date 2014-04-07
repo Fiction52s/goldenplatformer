@@ -539,12 +539,12 @@ struct SingleActor : public TrueActor
 
 	void ClearDetectionboxes();
 
-	void CreateBox( uint32 tag, int layer, 
+	virtual void CreateBox( uint32 tag, int layer, 
 		float32 offsetX, float32 offsetY, 
 		float32 width, float32 height, 
 		float32 angle );
 
-	void CreateCircle( uint32 tag, int layer, 
+	virtual void CreateCircle( uint32 tag, int layer, 
 		float32 offsetX, float32 offsetY, 
 		float32 radius );
 
@@ -634,6 +634,7 @@ struct HitboxInfo
 		float32 offsetX, float32 offsetY, 
 		float32 width, float32 height,
 		float32 angle);
+	
 	bool circle; //otherwise its a box
 	uint32 tag;
 	float32 offsetX;
@@ -645,7 +646,14 @@ struct HitboxInfo
 
 struct PlayerGhost
 {
-	PlayerGhost( Stage *stage );
+	PlayerGhost( Stage *stage, 
+		PlayerChar *player);
+	void CreateBox( uint32 tag, float32 offsetX, 
+		float32 offsetY, float32 width, 
+		float32 height, float32 angle );
+	void CreateCircle( uint32 tag, 
+		float32 offsetX, float32 offsetY, 
+		float32 radius );
 	std::list< std::pair< uint32, 
 		std::list<HitboxInfo>> > hitboxes;
 	std::list<sf::Sprite> sprites;
@@ -653,6 +661,7 @@ struct PlayerGhost
 	uint32 recordFrame;
 	uint32 playFrame;
 	b2Body* body;
+	PlayerChar *player;
 };
 
 
@@ -665,6 +674,14 @@ struct PlayerChar: public SingleActor
 	void SetCarryVelocity( float x, float y);
 	virtual ~PlayerChar();
 	void Draw( sf::RenderTarget *target );
+	virtual void CreateBox( uint32 tag, int layer, 
+		float32 offsetX, float32 offsetY, 
+		float32 width, float32 height, 
+		float32 angle );
+
+	virtual void CreateCircle( uint32 tag, int layer, 
+		float32 offsetX, float32 offsetY, 
+		float32 radius );
 	//virtual void CloneDraw( sf::RenderTarget *target );
 	ControllerState currentInput;
 	ControllerState prevInput;
@@ -674,7 +691,7 @@ struct PlayerChar: public SingleActor
 
 	b2Vec2 save_carryVel;
 
-	PlayerGhost *ghosts;
+	PlayerGhost **ghosts;
 	uint32 ghostCount;
 	uint32 maxGhostCount;
 	uint8 ghostVisibility;
