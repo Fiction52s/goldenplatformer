@@ -342,6 +342,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	cloneWorld = false;
 	cloneWorldStart = false;
 
+	freezeFrames = 0;
 	
 	cloneWorldRevert = false;
 	cloneWorldCollapse = false;
@@ -2613,6 +2614,8 @@ bool Stage::UpdatePrePhysics()
 				{
 					if( !(*it)->IsPaused() && !((*it)->isGroup) || (*it)->isGroup )
 					{
+						cout << "updating type: " << (*it)->actorType << ", pos: " << (*it)->GetPosition().x <<
+							(*it)->GetPosition().y << endl;
 						(*it)->UpdatePrePhysics();
 					}
 				}
@@ -2642,7 +2645,7 @@ bool Stage::UpdatePrePhysics()
 				PlayerGhost &ghost = *(player->ghosts[i]);
 				if( ghost.playFrame < ghost.recordFrame )
 				{
-					ghost.playFrame++;
+					
 					assert( !ghost.sprites.empty() );
 
 					ghost.sprites.pop_front();
@@ -2650,6 +2653,8 @@ bool Stage::UpdatePrePhysics()
 					b2Vec2 p( ghost.position.front() );
 					ghost.position.pop_front();
 					ghost.body->SetTransform( p, 0 );
+
+					
 
 					b2Fixture *f = ghost.body->GetFixtureList();
 					while( f != NULL )
@@ -2691,7 +2696,7 @@ bool Stage::UpdatePrePhysics()
 
 					}
 					
-
+					ghost.playFrame++;
 					
 				}
 			}
@@ -3250,6 +3255,13 @@ bool Stage::Run()
 				}
 			}
 			
+			if( freezeFrames > 0 )
+			{
+				freezeFrames--;
+				accumulator -= TIMESTEP;
+				continue;
+			}
+
 			if( player->IsReversed() )
 			{
 				bool tempUp = currentInput.Up();
@@ -3694,6 +3706,7 @@ bool Stage::Run()
 			for( std::list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end();
 				++it )
 			{
+			//	cout << "drawing: " << (*it)->actorType << endl;
 				(*it)->Draw( &rt );
 			}
 		}
@@ -4032,11 +4045,17 @@ void Stage::UpdatePostPhysics()
 		ghost.playFrame = 0;
 		//player->ghostCount = 0;
 
+		Freeze( 30 );
+
 		cloneWorldStart = false;
+
+	//	ghost.position.push_back( player->GetPosition() );
 		EnterCloneWorld();
 	}
 	else if( cloneWorld && !cloneWorldStart && cloneWorldRevert )
 	{
+		//this is because the hitboxes are one frame behind the sprites initially
+		(player->ghosts[player->ghostCount-1])->position.pop_front();
 
 		cloneWorldRevert = false;
 		RevertCloneWorld();
@@ -4048,6 +4067,8 @@ void Stage::UpdatePostPhysics()
 	}
 	else if( cloneWorld && !cloneWorldStart && cloneWorldExtra )
 	{
+		Freeze( 30 );
+
 		cloneWorldExtra = false;
 		if( player->ghostCount < player->maxGhostCount )
 		{
@@ -4069,6 +4090,17 @@ void Stage::UpdatePostPhysics()
 		if( !(*it)->IsPaused() && !((*it)->isGroup) || (*it)->isGroup )
 		{
 			(*it)->UpdateSprites();
+		}
+	}
+
+	if( cloneWorld )
+	{
+		for( list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end(); ++it )
+		{
+			if( !(*it)->IsPaused() && !((*it)->isGroup) || (*it)->isGroup )
+			{
+				(*it)->UpdateSprites();
+			}
 		}
 	}
 
@@ -5297,4 +5329,5 @@ void Stage::ExtraCloneWorld()
 
 void Stage::Freeze( uint32 frames )
 {
+	freezeFrames = frames;
 }
