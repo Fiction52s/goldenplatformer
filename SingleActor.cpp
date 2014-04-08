@@ -255,6 +255,7 @@ PlayerGhost::PlayerGhost( Stage *stage, PlayerChar *player )
 	d.fixedRotation = true;
 	//d.position = stage->player->GetPosition();
 	body = stage->world->CreateBody( &d );
+	body->SetUserData( player );
 }
 
 void SingleActor::CreateBox( uint32 tag, int layer, 

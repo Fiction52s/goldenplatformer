@@ -2614,8 +2614,8 @@ bool Stage::UpdatePrePhysics()
 				{
 					if( !(*it)->IsPaused() && !((*it)->isGroup) || (*it)->isGroup )
 					{
-						cout << "updating type: " << (*it)->actorType << ", pos: " << (*it)->GetPosition().x <<
-							(*it)->GetPosition().y << endl;
+						//cout << "updating type: " << (*it)->actorType << ", pos: " << (*it)->GetPosition().x <<
+						//	(*it)->GetPosition().y << endl;
 						(*it)->UpdatePrePhysics();
 					}
 				}
@@ -2655,13 +2655,15 @@ bool Stage::UpdatePrePhysics()
 					ghost.body->SetTransform( p, 0 );
 
 					
-
-					b2Fixture *f = ghost.body->GetFixtureList();
-					while( f != NULL )
+					if( player->hitlagFrames == 0 )
 					{
-						b2Fixture *toDestroy = f;
-						f = f->GetNext();
-						ghost.body->DestroyFixture( toDestroy );
+						b2Fixture *f = ghost.body->GetFixtureList();
+						while( f != NULL )
+						{
+							b2Fixture *toDestroy = f;
+							f = f->GetNext();
+							ghost.body->DestroyFixture( toDestroy );
+						}
 					}
 
 					if( ghost.playFrame == ghost.hitboxes.front().first )
@@ -2675,12 +2677,12 @@ bool Stage::UpdatePrePhysics()
 
 							if( hitInfo.circle )
 							{
-								ghost.CreateCircle( hitInfo.tag, hitInfo.offsetX, hitInfo.offsetY, hitInfo.width );
+								ghost.CreateCircle( hitInfo.tag + 100, hitInfo.offsetX, hitInfo.offsetY, hitInfo.width );
 							}
 							else
 							{
 								//cout << "create ghost box on frame: " << ghost.playFrame << endl;
-								ghost.CreateBox( hitInfo.tag, hitInfo.offsetX, hitInfo.offsetY, hitInfo.width,
+								ghost.CreateBox( hitInfo.tag + 100, hitInfo.offsetX, hitInfo.offsetY, hitInfo.width,
 									hitInfo.height, hitInfo.angle );
 							}
 						}
@@ -4032,7 +4034,7 @@ void Stage::UpdatePostPhysics()
 	{
 		PlayerGhost & ghost = *(player->ghosts[player->ghostCount-1]);
 		ghost.recordFrame++;
-		cout << "ghost: " << player->ghostCount -1 << " record frame: " << ghost.recordFrame << endl;
+		//cout << "ghost: " << player->ghostCount -1 << " record frame: " << ghost.recordFrame << endl;
 	}
 
 	if( cloneWorldStart )

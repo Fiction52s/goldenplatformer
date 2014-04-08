@@ -662,6 +662,7 @@ struct PlayerGhost
 	uint32 playFrame;
 	b2Body* body;
 	PlayerChar *player;
+	uint32 hitlagFrames;
 };
 
 
@@ -695,6 +696,8 @@ struct PlayerChar: public SingleActor
 	uint32 ghostCount;
 	uint32 maxGhostCount;
 	uint8 ghostVisibility;
+
+	uint32 hitlagFrames;
 
 	virtual void SaveState();
 	virtual void LoadState();

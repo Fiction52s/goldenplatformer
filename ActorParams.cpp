@@ -408,9 +408,9 @@ void ActorParams::LoadState()
 		spriteIsEnabled[i] = save_spriteIsEnabled[i];
 		spriteOffset[i] = save_spriteOffset[i];
 	}
-	cout << "position: " << GetPosition().x << ", " << GetPosition().y << endl;
+	//cout << "position: " << GetPosition().x << ", " << GetPosition().y << endl;
 	SetPosition( save_position.x, save_position.y );
-	cout << "new position: " << GetPosition().x << ", " << GetPosition().y << endl;
+	//cout << "new position: " << GetPosition().x << ", " << GetPosition().y << endl;
 	SetBodyAngle( save_angle );
 	SetVelocity( save_velocity.x, save_velocity.y );
 

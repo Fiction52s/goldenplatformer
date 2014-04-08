@@ -27,7 +27,7 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 		bool facingRight, bool reverse, float32 angle,
 		TrueActor *parent, Stage *st )
 		:SingleActor( "player", pos, vel, facingRight, reverse, angle, parent, st ),
-		maxGhostCount( 8 ), ghostCount( 0 )
+		maxGhostCount( 8 ), ghostCount( 0 ),hitlagFrames( 0 )
 {
 	ghosts = new PlayerGhost*[maxGhostCount];
 	for( int i = 0; i < maxGhostCount; ++i )
@@ -88,6 +88,9 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 	lua_setglobal( L, "currentInput" );
 	push( L, &prevInput );
 	lua_setglobal( L, "prevInput" );
+
+	//push( L, hitlagFrames );
+	//lua_setglobal( L, "hitlagFrames" );
 }
 
 PlayerChar::~PlayerChar()
@@ -212,8 +215,6 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 	luaL_openlibs( L );
 
 
-	
-
 	string luaF =  "Resources/Actors/" + actorType + "/" + actorType + ".lua";
 	int s = luaL_loadfile( L, luaF.c_str() );
 	
@@ -294,6 +295,7 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 			.deriveClass<PlayerChar, SingleActor>("PlayerChar")
 				.addFunction( "SetCarryVelocity", &PlayerChar::SetCarryVelocity )
 				.addFunction( "GetCarryVelocity", &PlayerChar::GetCarryVelocity )
+				.addData( "hitlagFrames", &PlayerChar::hitlagFrames )
 			.endClass()
 			.beginClass<b2Vec2>( "b2Vec2" )
 				.addConstructor<void(*)(void)>()
@@ -325,6 +327,7 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 	push( L, angle );
 	lua_setglobal( L, "angle" );
 
+	
 	
 
 	push<Stage*>( L, st );
