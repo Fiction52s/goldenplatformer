@@ -366,12 +366,16 @@ void SingleActor::UpdateSprites()
 			
 		}
 		a = -a;
+		sprite[i]->setOrigin( sprite[i]->getLocalBounds().width / 2 - actorParams->spriteOffset[i].x * BOX2SF, 
+			sprite[i]->getLocalBounds().height / 2 - actorParams->spriteOffset[i].y * BOX2SF );
 		sprite[i]->setRotation( m_spriteAngle[i] * 180 );
-		sprite[i]->setPosition( ( actorParams->body->GetPosition().x 
-			+ actorParams->spriteOffset[i].x * cos( a )
-		+ actorParams->spriteOffset[i].y * sin( a ) ) * BOX2SF, 
-			( actorParams->GetPosition().y + actorParams->spriteOffset[i].y * cos( a )
-			+ actorParams->spriteOffset[i].x * sin( a ) ) * BOX2SF ); 
+		sprite[i]->setPosition( actorParams->body->GetPosition().x * BOX2SF, 
+			actorParams->body->GetPosition().y * BOX2SF );
+		//sprite[i]->setPosition( ( actorParams->body->GetPosition().x 
+		//	+ actorParams->spriteOffset[i].x/* * cos( a )
+		//+ actorParams->spriteOffset[i].y * sin( a )*/ ) * BOX2SF, 
+		//	( actorParams->GetPosition().y + actorParams->spriteOffset[i].y /** cos( a )
+		//	+ actorParams->spriteOffset[i].x * sin( a )*/ ) * BOX2SF ); 
 		//sprite[i]->setColor( sf::Color( 0,255,255 ) );
 		if( actorType == "player" )
 		{

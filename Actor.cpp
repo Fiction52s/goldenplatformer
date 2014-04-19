@@ -97,6 +97,11 @@ PlayerChar::~PlayerChar()
 {
 }
 
+void PlayerChar::SetGhostHitlag( uint32 index, uint32 hitlagFrames )
+{
+	ghosts[index]->hitlagFrames = hitlagFrames;
+}
+
 void PlayerChar::Draw( sf::RenderTarget *target )
 {
 	if( !stage->cloneWorld )
@@ -295,6 +300,7 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 			.deriveClass<PlayerChar, SingleActor>("PlayerChar")
 				.addFunction( "SetCarryVelocity", &PlayerChar::SetCarryVelocity )
 				.addFunction( "GetCarryVelocity", &PlayerChar::GetCarryVelocity )
+				.addFunction( "SetGhostHitlag", &PlayerChar::SetGhostHitlag )
 				.addData( "hitlagFrames", &PlayerChar::hitlagFrames )
 			.endClass()
 			.beginClass<b2Vec2>( "b2Vec2" )

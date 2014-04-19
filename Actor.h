@@ -683,6 +683,8 @@ struct PlayerChar: public SingleActor
 	virtual void CreateCircle( uint32 tag, int layer, 
 		float32 offsetX, float32 offsetY, 
 		float32 radius );
+	void SetGhostHitlag( uint32 index,
+		uint32 hitlagFrames );
 	//virtual void CloneDraw( sf::RenderTarget *target );
 	ControllerState currentInput;
 	ControllerState prevInput;

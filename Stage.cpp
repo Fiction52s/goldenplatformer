@@ -2645,29 +2645,44 @@ bool Stage::UpdatePrePhysics()
 				PlayerGhost &ghost = *(player->ghosts[i]);
 				if( ghost.playFrame < ghost.recordFrame )
 				{
-					
+					b2Fixture *f = ghost.body->GetFixtureList();
+					while( f != NULL )
+					{
+						b2Fixture *toDestroy = f;
+						f = f->GetNext();
+						ghost.body->DestroyFixture( toDestroy );
+					}
+
+
 					assert( !ghost.sprites.empty() );
 
-					ghost.sprites.pop_front();
+					ghost.sprites.pop_front(); 
 
 					b2Vec2 p( ghost.position.front() );
 					ghost.position.pop_front();
 					ghost.body->SetTransform( p, 0 );
 
 					
-					if( player->hitlagFrames == 0 )
+					if( ghost.hitlagFrames == 0 )
 					{
-						b2Fixture *f = ghost.body->GetFixtureList();
+						/*b2Fixture *f = ghost.body->GetFixtureList();
 						while( f != NULL )
 						{
 							b2Fixture *toDestroy = f;
 							f = f->GetNext();
 							ghost.body->DestroyFixture( toDestroy );
-						}
+						}*/
+					}
+					else
+					{
+						ghost.hitlagFrames--;
 					}
 
 					if( ghost.playFrame == ghost.hitboxes.front().first )
 					{
+						
+
+
 						list<HitboxInfo> &hitInfoList = ghost.hitboxes.front().second;
 
 						for( list<HitboxInfo>::iterator hIt = hitInfoList.begin();
@@ -2677,12 +2692,12 @@ bool Stage::UpdatePrePhysics()
 
 							if( hitInfo.circle )
 							{
-								ghost.CreateCircle( hitInfo.tag + 100, hitInfo.offsetX, hitInfo.offsetY, hitInfo.width );
+								ghost.CreateCircle( hitInfo.tag + 100 * ( i + 1 ), hitInfo.offsetX, hitInfo.offsetY, hitInfo.width );
 							}
 							else
 							{
 								//cout << "create ghost box on frame: " << ghost.playFrame << endl;
-								ghost.CreateBox( hitInfo.tag + 100, hitInfo.offsetX, hitInfo.offsetY, hitInfo.width,
+								ghost.CreateBox( hitInfo.tag + 100 * ( i + 1 ), hitInfo.offsetX, hitInfo.offsetY, hitInfo.width,
 									hitInfo.height, hitInfo.angle );
 							}
 						}
@@ -4047,16 +4062,33 @@ void Stage::UpdatePostPhysics()
 		ghost.playFrame = 0;
 		//player->ghostCount = 0;
 
-		Freeze( 30 );
+
+	//	Freeze( 30 );
 
 		cloneWorldStart = false;
 
 	//	ghost.position.push_back( player->GetPosition() );
 		EnterCloneWorld();
+
+
 	}
 	else if( cloneWorld && !cloneWorldStart && cloneWorldRevert )
 	{
 		//this is because the hitboxes are one frame behind the sprites initially
+		for( int i = 0; i < player->ghostCount; ++i )
+		{
+			PlayerGhost &ghost = *(player->ghosts[i]);
+
+			b2Fixture *f = ghost.body->GetFixtureList();
+			while( f != NULL )
+			{
+				b2Fixture *toDestroy = f;
+				f = f->GetNext();
+				ghost.body->DestroyFixture( toDestroy );
+			}
+		}
+
+
 		(player->ghosts[player->ghostCount-1])->position.pop_front();
 
 		cloneWorldRevert = false;
@@ -4069,7 +4101,7 @@ void Stage::UpdatePostPhysics()
 	}
 	else if( cloneWorld && !cloneWorldStart && cloneWorldExtra )
 	{
-		Freeze( 30 );
+		//Freeze( 30 );
 
 		cloneWorldExtra = false;
 		if( player->ghostCount < player->maxGhostCount )
