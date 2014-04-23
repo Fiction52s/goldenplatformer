@@ -608,6 +608,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 		
 
 		bool actorLayerYet = false;
+		bool foregroundYet = false;
 		
 		while( node = node->next_sibling() )
 		{
@@ -697,6 +698,12 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 				layer->scrollRatio = scrollRatio;
 				layer->scrollx = scrollx;
 				layer->scrolly = scrolly;
+
+				if( scrollRatio > 1 && !foregroundYet )
+				{
+					foregroundYet = true;
+					layers.push_back( NULL );
+				}
 				layers.push_back( layer );
 				
 
@@ -2512,7 +2519,32 @@ bool Stage::UpdatePrePhysics()
 					}
 					else
 					{
+						for( uint32 i = 0; i < a->spriteCount; ++i )
+						{
+							int32 spritePriority = a->spritePriority[i];
+							if( spritePriority <= -1 && spritePriority >= -4 )
+							{
+								backLayers[spritePriority + 4].remove( pair<TrueActor*, uint32>( a, i ) );
+							}
+							else if( spritePriority == 0 )
+							{
+								actorLayer.remove( pair<TrueActor*, uint32>( a, i ) );
+							}
+							else if( spritePriority >= 1 && spritePriority <= 4 )
+							{
+								midLayers[spritePriority - 1].remove( pair<TrueActor*, uint32>( a, i ) );
+							}
+							else if( spritePriority >= 5 && spritePriority <= 8 )
+							{
+								frontLayers[spritePriority - 5 ].remove( pair<TrueActor*, uint32>( a, i ) );
+							}
+							else
+							{
+								assert( 0 );
+							}
+						}
 						delete a;
+
 					}
 
 					//world->DestroyBody( a->m_body );
@@ -3501,7 +3533,7 @@ bool Stage::Run()
 		view.setSize( viewSize );
 
 		window->setView( view );
-		//layers behind the map
+		
 		//sf::View testView;
 		//testView.setCenter( mapView.getCenter() );
 		//testView.setSize( sf::Vector2f( rt.getSize() ) );
@@ -3510,7 +3542,7 @@ bool Stage::Run()
 		//-1 just tests for initialization
 		
 
-
+		//layers behind the map
 		std::list<ImageLayer*>::iterator layerIt = layers.begin(); 
 		for( ; layerIt != layers.end() && (*layerIt) != NULL; ++layerIt )
 		{
@@ -3621,7 +3653,15 @@ bool Stage::Run()
 
 		rt.setView( mapView );
 
-		
+		for( uint32 priorityIndex = 0; priorityIndex < 4; ++priorityIndex )
+		{
+			for( list<pair<TrueActor*, uint32>>::iterator it = backLayers[priorityIndex].begin(); 
+				it != backLayers[priorityIndex].end(); ++it )
+			{
+				(*it).first->Draw( &rt, (*it).second );
+			}
+		}
+
 
 		//window->setView( view );
 		//rt.setView( mapView );
@@ -3712,11 +3752,14 @@ bool Stage::Run()
 			}
 		}
 
-
-		for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+		for( list<pair<TrueActor*, uint32>>::iterator it = actorLayer.begin(); it != actorLayer.end(); ++it )
+		{
+			(*it).first->Draw( &rt, (*it).second );
+		}
+		/*for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 		{
 			(*it)->Draw( &rt );
-		}
+		}*/
 		
 		if( cloneWorld )
 		{
@@ -3724,13 +3767,13 @@ bool Stage::Run()
 				++it )
 			{
 			//	cout << "drawing: " << (*it)->actorType << endl;
-				(*it)->Draw( &rt );
+				//(*it)->Draw( &rt );
 			}
 		}
 
 		if( (*layerIt) == NULL )
 			++layerIt;
-		//layers in front of the map but behind the actor
+		//layers in front of the actor but behind the map
 		for( ; layerIt != layers.end() && (*layerIt) != NULL; ++layerIt )
 		{
 			//if( (*layerIt)->scrollRatio != 1 )
@@ -3747,8 +3790,18 @@ bool Stage::Run()
 		}
 		rt.setView( mapView );
 
+
+		for( uint32 priorityIndex = 0; priorityIndex < 4; ++priorityIndex )
+		{
+			for( list<pair<TrueActor*, uint32>>::iterator it = midLayers[priorityIndex].begin(); 
+				it != midLayers[priorityIndex].end(); ++it )
+			{
+				(*it).first->Draw( &rt, (*it).second );
+			}
+		}
 		
 
+		//drawing the map
 		statClock.restart();
 		for( std::map<sf::Texture*, sf::VertexArray*>::iterator mapIt = texVertexMap.begin(); 
 			mapIt != texVertexMap.end(); ++mapIt )
@@ -3756,6 +3809,8 @@ bool Stage::Run()
 			rt.draw( *(*mapIt).second, (*mapIt).first );
 			//window->draw( *(*mapIt).second, (*mapIt).first );
 		}
+
+		
 
 		//for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 		//{
@@ -3821,22 +3876,54 @@ bool Stage::Run()
 
 
 		
-		
+		//this is a hack. i won't be able to put any image layers closer to the camera until i fix it
 
 		if( (*layerIt) == NULL )
 			++layerIt;
 		//layers in front of the actor and the map
+		for( ; layerIt != layers.end() && (*layerIt) != NULL; ++layerIt )
+		{
+			//if( (*layerIt)->scrollRatio != 1 )
+			//{
+				(*layerIt)->view.setCenter( sp + ( view.getCenter() - sp ) * (*layerIt)->scrollRatio);
+				//(*layerIt)->view.setSize( sf::Vector2f( rt.getSize() ) * ( 1 + cameraZoom * (*layerIt)->scrollRatio ) );
+				rt.setView( (*layerIt)->view  );
+				for( std::map<TileSet*, sf::VertexArray*>::iterator objectIt = (*layerIt)->objectMap.begin();
+					objectIt != (*layerIt)->objectMap.end(); ++objectIt )
+				{
+					rt.draw( *(*objectIt).second, (*objectIt).first->texture );
+				}
+			//}
+		}
+		rt.setView( mapView );
+
+		for( uint32 priorityIndex = 0; priorityIndex < 4; ++priorityIndex )
+		{
+			for( list<pair<TrueActor*, uint32>>::iterator it = frontLayers[priorityIndex].begin(); 
+				it != frontLayers[priorityIndex].end(); ++it )
+			{
+				(*it).first->Draw( &rt, (*it).second );
+			}
+		}
+
+		//foreground
+		if( (*layerIt) == NULL )
+			++layerIt;
+		
 		for( ; layerIt != layers.end(); ++layerIt )
 		{
-
-			(*layerIt)->view.setCenter( sp + ( view.getCenter() - sp ) * (*layerIt)->scrollRatio);
-			//(*layerIt)->view.setSize( sf::Vector2f( rt.getSize() ) * ( 1 + cameraZoom * (*layerIt)->scrollRatio ) );
-			rt.setView( (*layerIt)->view  );
-			for( std::map<TileSet*, sf::VertexArray*>::iterator objectIt = (*layerIt)->objectMap.begin();
-				objectIt != (*layerIt)->objectMap.end(); ++objectIt )
-			{
-				rt.draw( *(*objectIt).second, (*objectIt).first->texture );
-			}
+			assert( (*layerIt)->scrollRatio != 1 );
+			//if( (*layerIt)->scrollRatio != 1 )
+			//{
+				(*layerIt)->view.setCenter( sp + ( view.getCenter() - sp ) * (*layerIt)->scrollRatio);
+				//(*layerIt)->view.setSize( sf::Vector2f( rt.getSize() ) * ( 1 + cameraZoom * (*layerIt)->scrollRatio ) );
+				rt.setView( (*layerIt)->view  );
+				for( std::map<TileSet*, sf::VertexArray*>::iterator objectIt = (*layerIt)->objectMap.begin();
+					objectIt != (*layerIt)->objectMap.end(); ++objectIt )
+				{
+					rt.draw( *(*objectIt).second, (*objectIt).first->texture );
+				}
+			//}
 		}
 		rt.setView( mapView );
 		
@@ -5364,4 +5451,78 @@ void Stage::ExtraCloneWorld()
 void Stage::Freeze( uint32 frames )
 {
 	freezeFrames = frames;
+}
+
+void Stage::DrawActorBackLayers(sf::RenderTarget *target)
+{
+	for( uint32 i = 0; i < 4; ++i )
+	{
+		for( list<pair<TrueActor*, uint32>>::iterator actorIt = backLayers[i].begin(); 
+			actorIt != backLayers[i].end(); ++actorIt )
+		{
+			TrueActor *actor = (*actorIt).first;
+			uint32 spriteIndex = (*actorIt).second;
+			actor->Draw( target, spriteIndex );
+			//backLayers[i].remove( (*actorIt) );
+		}
+	}
+}
+
+void Stage::DrawActorMidLayers(sf::RenderTarget *target)
+{
+	for( uint32 i = 0; i < 4; ++i )
+	{
+		for( list<pair<TrueActor*, uint32>>::iterator actorIt = midLayers[i].begin(); 
+			actorIt != midLayers[i].end(); ++actorIt )
+		{
+			TrueActor *actor = (*actorIt).first;
+			uint32 spriteIndex = (*actorIt).second;
+			actor->Draw( target, spriteIndex );
+			//backLayers[i].remove( (*actorIt) );
+		}
+	}
+}
+
+void Stage::DrawActorFrontLayers(sf::RenderTarget *target)
+{
+	for( uint32 i = 0; i < 4; ++i )
+	{
+		for( list<pair<TrueActor*, uint32>>::iterator actorIt = frontLayers[i].begin(); 
+			actorIt != frontLayers[i].end(); ++actorIt )
+		{
+			TrueActor *actor = (*actorIt).first;
+			uint32 spriteIndex = (*actorIt).second;
+			actor->Draw( target, spriteIndex );
+			//backLayers[i].remove( (*actorIt) );
+		}
+	}
+}
+
+void Stage::SetSpritePriority( TrueActor *actor, uint32 spriteIndex, int32 priority )
+{
+	uint32 trueIndex = 0;
+	if( priority < -4 )
+	{
+		assert( 0 );
+	}
+	else if( priority < 0 )
+	{
+		backLayers[priority + 4].push_back( pair<TrueActor*, uint32>( actor, spriteIndex ) );
+	}
+	else if( priority == 0 )
+	{
+		actorLayer.push_back( pair<TrueActor*, uint32>( actor, spriteIndex ) );
+	}
+	else if( priority <= 4 )
+	{
+		midLayers[priority - 1].push_back( pair<TrueActor*, uint32>( actor, spriteIndex ) );
+	}
+	else if( priority <= 8 )
+	{
+		frontLayers[priority - 5].push_back( pair<TrueActor*, uint32>( actor, spriteIndex ) );
+	}
+	else
+	{
+		assert( 0 );
+	}
 }

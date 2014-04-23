@@ -329,7 +329,8 @@ struct TrueActor : public b2RayCastCallback //change this later
 	int Message( TrueActor *sender, const std::string &msg, 
 		float tag );
 
-	virtual void Draw( sf::RenderTarget *target ) = 0;
+	virtual void Draw( sf::RenderTarget *target,
+		uint32 spriteIndex ) = 0;
 
 	virtual void CloneDraw( sf::RenderTarget *target ) = 0;
 
@@ -458,6 +459,8 @@ struct TrueActor : public b2RayCastCallback //change this later
 
 	virtual uint32 & GetActorsAttackedIndex() = 0;
 
+	void SetSpritePriority( uint32 spriteIndex, int32 priority );
+
 	int bodyType;
 	bool fixedAngle;
 	float restitution;
@@ -468,6 +471,9 @@ struct TrueActor : public b2RayCastCallback //change this later
 	TrueActor *parent;
 	lua_State *L;
 	uint32 spriteCount;
+	int32 *spritePriority;
+
+
 	RayCastInfo closestCast; //just a temp in the cycle
 	
 	uint32 hitsReceivedCap;
@@ -527,7 +533,8 @@ struct SingleActor : public TrueActor
 
 	float GetBodyAngle();
 
-	virtual void Draw( sf::RenderTarget *target );
+	virtual void Draw( sf::RenderTarget *target, 
+		uint32 spriteIndex );
 
 	virtual void CloneDraw( sf::RenderTarget *target );
 
@@ -674,7 +681,8 @@ struct PlayerChar: public SingleActor
 	b2Vec2 & GetCarryVelocity();
 	void SetCarryVelocity( float x, float y);
 	virtual ~PlayerChar();
-	void Draw( sf::RenderTarget *target );
+	void Draw( sf::RenderTarget *target,
+		uint32 spriteIndex );
 	virtual void CreateBox( uint32 tag, int layer, 
 		float32 offsetX, float32 offsetY, 
 		float32 width, float32 height, 
@@ -765,7 +773,8 @@ struct GroupActor : public TrueActor
 
 	void SetOrigin( float x, float y );
 
-	virtual void Draw( sf::RenderTarget *target );
+	virtual void Draw( sf::RenderTarget *target,
+		uint32 spriteIndex );
 
 	virtual void CloneDraw( sf::RenderTarget *target );
 
@@ -883,7 +892,8 @@ struct BulletActor: public GroupActor
 		TrueActor *parent, Stage *st );
 	virtual void Init( b2World *p_world );
 	virtual ~BulletActor();
-	virtual void Draw( sf::RenderTarget *target );
+	virtual void Draw( sf::RenderTarget *target,
+		uint32 spriteIndex );
 	virtual void CloneDraw( sf::RenderTarget *target );
 	virtual void UpdatePostPhysics();
 	void ClearTrail();

@@ -91,6 +91,10 @@ void GroupActor::Init( b2World *p_world )
 	lua_getglobal( L, "Init" );
 	lua_pcall( L, 0, 0, 0 );
 	
+	for( uint32 i = 0; i < spriteCount; ++i )
+	{
+		SetSpritePriority( i, spritePriority[i] );
+	}
 
 	for( int i = 0; i < actorCount; ++i )
 	{
@@ -123,19 +127,19 @@ void GroupActor::FaceRight()
 	}
 }
 
-void GroupActor::Draw( sf::RenderTarget *target )
+void GroupActor::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 {
-	for( int i = 0; i < spriteCount; ++i )
-	{
+	//for( int i = 0; i < spriteCount; ++i )
+	//{
 		sf::RenderStates states( stage->tileSets[tileSetIndex]->texture );
 		//transform[i] = sf::Transform::Identity;
 	//	if( parent != NULL )
 
 			//transform[i].rotate( 5, parent->GetPosition().x * BOX2SF, parent->GetPosition().y * BOX2SF );
 		//transform[i].rotate( 1 );
-		states.transform = transform[i];
-		target->draw( vertexArray[i], states );
-	}
+		states.transform = transform[spriteIndex];
+		target->draw( vertexArray[spriteIndex], states );
+	//}
 }
 
 void GroupActor::CloneDraw( sf::RenderTarget *target )

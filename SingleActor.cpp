@@ -118,6 +118,11 @@ void SingleActor::Init( b2World *p_world )
 	lua_getglobal( L, "Init" );
 	lua_pcall( L, 0, 0, 0 );
 
+	for( uint32 i = 0; i < spriteCount; ++i )
+	{
+		SetSpritePriority( i, spritePriority[i] );
+	}
+
 	actorParams->UpdateBoundingBoxes();
 }
 
@@ -146,16 +151,16 @@ void SingleActor::FaceRight()
 	}
 }
 
-void SingleActor::Draw( sf::RenderTarget *target )
+void SingleActor::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 {
 	//for( int i = spriteCount-1; i >=0 ; --i )
-	for( int i = 0; i < spriteCount; ++i )
-	{
-		if( actorParams->spriteIsEnabled[i] )
+	//for( int i = 0; i < spriteCount; ++i )
+	//{
+		if( actorParams->spriteIsEnabled[spriteIndex] )
 		{
-			target->draw( *(sprite[i]) );
+			target->draw( *(sprite[spriteIndex]) );
 		}
-	}
+	//}
 }
 
 void SingleActor::CloneDraw( sf::RenderTarget *target )

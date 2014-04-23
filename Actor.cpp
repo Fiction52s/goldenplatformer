@@ -102,14 +102,14 @@ void PlayerChar::SetGhostHitlag( uint32 index, uint32 hitlagFrames )
 	ghosts[index]->hitlagFrames = hitlagFrames;
 }
 
-void PlayerChar::Draw( sf::RenderTarget *target )
+void PlayerChar::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 {
 	if( !stage->cloneWorld )
 	{
 		for( int i = 0; i < ghostCount; ++i )
 		{
-			PlayerGhost &ghost = *(ghosts[i]);
 
+			PlayerGhost &ghost = *(ghosts[i]);
 			if( ghost.playFrame < ghost.recordFrame )
 			{
 				//cout << "ghost: " << ghostCount - 1 << ", playframe: " << ghost.playFrame << ", recordframe: " <<
@@ -276,6 +276,7 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addFunction( "IsPaused", &TrueActor::IsPaused )
 				.addFunction( "SetSpriteEnabled", &TrueActor::SetSpriteEnabled )
 				.addFunction( "SetColor", &TrueActor::SetColor )
+				.addFunction( "SetSpritePriority", &TrueActor::SetSpritePriority )
 				//.addFunction( "GetSpriteEnabled", &TrueActor::GetSpriteEnabled )
 				.addData( "type", &TrueActor::actorType, false )
 				.addData( "health", &TrueActor::health )
@@ -398,6 +399,14 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 	spriteCount = lua_tonumber( L, -1 );
 	lua_pop( L, 1 );
 
+	spritePriority = new int32[spriteCount];
+	for( uint32 i = 0; i < spriteCount; ++i )
+	{
+		spritePriority[i] = 0;
+	}
+	
+
+
 	lua_getglobal( L, "BodyType" );
 	lua_pcall( L, 0, 2, 0 );
 	if( !lua_isnumber( L, -1 ) )
@@ -419,7 +428,7 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 
 TrueActor::~TrueActor()
 {
-	
+	delete [] spritePriority;
 }
 
 std::string & TrueActor::GetType()
@@ -647,5 +656,12 @@ void TrueActor::LoadState()
 
 	lua_getglobal( L, "LoadState" );
 	lua_pcall( L, 0, 0, 0 );
+}
+
+//-4 is min priority, 0 is default, terrain is between 4 and 5. 8 is max
+void TrueActor::SetSpritePriority( uint32 spriteIndex, int32 priority )
+{
+	stage->SetSpritePriority( this, spriteIndex, priority );
+	spritePriority[spriteIndex] = priority;
 }
 

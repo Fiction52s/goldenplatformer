@@ -56,6 +56,10 @@ void BulletActor::Init( b2World *p_world )
 	lua_getglobal( L, "Init" );
 	lua_pcall( L, 0, 0, 0 );
 	
+	for( uint32 i = 0; i < spriteCount; ++i )
+	{
+		SetSpritePriority( i, spritePriority[i] );
+	}
 
 	for( int i = 0; i < actorCount; ++i )
 	{
@@ -84,20 +88,20 @@ BulletActor::~BulletActor()
 	delete [] trailOn;
 }
 
-void BulletActor::Draw( sf::RenderTarget *target )
+void BulletActor::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 {	
 	target->draw( trailArray );
-	for( int i = 0; i < spriteCount; ++i )
-	{
+	//for( int i = 0; i < spriteCount; ++i )
+	//{
 		sf::RenderStates states( stage->tileSets[tileSetIndex]->texture );
 		//transform[i] = sf::Transform::Identity;
 	//	if( parent != NULL )
 
 			//transform[i].rotate( 5, parent->GetPosition().x * BOX2SF, parent->GetPosition().y * BOX2SF );
 		//transform[i].rotate( 1 );
-		states.transform = transform[i];
-		target->draw( vertexArray[i], states );
-	}
+		states.transform = transform[spriteIndex];
+		target->draw( vertexArray[spriteIndex], states );
+	//}
 	//UpdateTrails();
 	
 }

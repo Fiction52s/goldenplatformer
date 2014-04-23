@@ -271,8 +271,19 @@ private:
 
 	//void SaveState();
 	//void LoadState();
+	void DrawActorBackLayers(sf::RenderTarget *target);
+	void DrawActorMidLayers(sf::RenderTarget *target);
+	void DrawActorFrontLayers(sf::RenderTarget *target);
+	
 
+	std::list<std::pair<TrueActor*, uint32>> backLayers[4];
+	std::list<std::pair<TrueActor*, uint32>> midLayers[4];
+	std::list<std::pair<TrueActor*, uint32>> frontLayers[4];
+	std::list<std::pair<TrueActor*, uint32>> actorLayer;
+
+	
 public:
+	void SetSpritePriority( TrueActor* actor, uint32 spriteIndex, int32 priority );
 	bool cloneWorld;
 	bool cloneWorldStart;
 	bool cloneWorldRevert;
