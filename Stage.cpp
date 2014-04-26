@@ -3531,8 +3531,8 @@ bool Stage::Run()
 		viewSize.y = floor( viewSize.y + .5f );
 		//cout << "diff: " << viewSize.x - view.getSize().x  << ", " << viewSize.y - view.getSize().y << endl;
 		view.setSize( viewSize );
-
 		window->setView( view );
+		
 		
 		//sf::View testView;
 		//testView.setCenter( mapView.getCenter() );

@@ -665,3 +665,5 @@ void TrueActor::SetSpritePriority( uint32 spriteIndex, int32 priority )
 	spritePriority[spriteIndex] = priority;
 }
 
+
+

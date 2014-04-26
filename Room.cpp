@@ -136,3 +136,100 @@ b2Vec2 Room::GetTempPoint( const string &name )
 		assert( 0 && errorMsg.c_str() );
 	}
 }
+
+Squad::Squad( Stage *st )
+	:st( st )
+{
+}
+
+void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
+{
+	if( activeActors.empty() )
+	{
+		activated = false;
+		initialized = false;
+	}
+
+	b2Vec2 camPos( pos.x * SF2BOX, pos.y * SF2BOX );
+	b2Vec2 camSize( size.x * SF2BOX, size.y * SF2BOX );
+	b2Vec2 camHalfSize( camSize.x / 2, camSize.y / 2 );
+	
+	float32 camLeft = camPos.x - camHalfSize.x;
+	float32 camRight = camPos.x + camHalfSize.x;
+	float32 camTop = camPos.y - camHalfSize.y;
+	float32 camBottom = camPos.y + camHalfSize.y;
+
+	sf::FloatRect camRect( camLeft, camTop, camSize.x, camSize.y );
+
+	if( !initialized )
+	{	
+		for( std::list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
+		{
+			ActorDef &ad = *(*it);
+			b2Vec2 actorPos( ad.pos );
+			if( actorPos.x > camLeft && actorPos.x < camRight && actorPos.y > camTop && actorPos.y < camBottom )
+			{
+				initialized = true;
+				break;
+			}
+		}
+
+		if( initialized )
+		{
+			for( std::list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
+			{
+				ActorDef &ad = *(*it);
+				TrueActor *a = st->CreateActor( ad.type, ad.pos, ad.vel, ad.facingRight, 
+					ad.reverse, ad.angle, ad.parent );
+				a->SetPause( true );
+				activeActors.push_back( a );	
+			}
+		}
+	}
+	else if( !activated )
+	{
+		for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+		{
+			TrueActor *a = (*it);
+			sf::FloatRect aabb = a->GetSpriteAABB();
+			if( aabb.intersects( camRect ) )
+			{
+				activated = true;
+				break;
+			}
+		}
+
+		if( activated )
+		{
+			for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+			{
+				(*it)->SetPause( false );
+			}
+		}
+	}
+	else
+	{
+		sf::FloatRect largeRect( camLeft - camSize.x, camTop - camSize.y, camSize.x * 2, camSize.y * 2 );
+
+		for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); )
+		{
+			TrueActor *a = (*it);
+			sf::FloatRect aabb = a->GetSpriteAABB();
+			if( !aabb.intersects( largeRect ) )
+			{
+				it = activeActors.erase( it );
+				a->Kill();
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+	
+}
+
+void Squad::DeactivateActor( TrueActor *actor )
+{
+	activeActors.remove( actor );
+}

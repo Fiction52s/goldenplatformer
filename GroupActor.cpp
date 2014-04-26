@@ -642,3 +642,35 @@ void GroupActor::SaveState()
 void GroupActor::LoadState()
 {
 }
+
+sf::FloatRect GroupActor::GetSpriteAABB()
+{
+	return transform->transformRect( vertexArray->getBounds() );
+	/*sf::FloatRect aabb = vertexArray[0].getBounds();
+	for( uint32 i = 1; i < spriteCount; ++i )
+	{
+		sf::FloatRect r = sprite[i]->getGlobalBounds();
+		if( r.left < aabb.left )
+		{ 
+			float oldLeft = aabb.left;
+			aabb.left = r.left;
+			aabb.width = ( oldLeft + aabb.width ) - aabb.left;
+		}
+		if( r.left + r.width > aabb.left + aabb.width )
+		{
+			aabb.width = ( r.left + r.width ) - aabb.left;
+		}
+
+		if( r.top < aabb.top )
+		{ 
+			float oldTop = aabb.top;
+			aabb.top = r.top;
+			aabb.height = ( oldTop + aabb.height ) - aabb.top;
+		}
+		if( r.top + r.height > aabb.top + aabb.height )
+		{
+			aabb.height = ( r.top + r.height ) - aabb.top;
+		}
+	}*/
+	//return aabb;
+}

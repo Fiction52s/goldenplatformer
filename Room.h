@@ -10,8 +10,29 @@
 //temp points disappear when you leave the room
 
 
-
 class Stage;
+
+
+struct Squad
+{
+	Squad( Stage *st );
+	std::list<TrueActor*> activeActors;
+	std::list<ActorDef*> actorDefs;
+	bool initialized; //started but paused
+	bool activated; //full activation
+	void CheckCamera( sf::Vector2f pos,
+		sf::Vector2f size );
+	void DeactivateActor( TrueActor *actor );
+	Stage *st;
+
+	std::list<TrueActor*> save_activeActors;
+	bool save_initialized;
+	bool save_activated;
+
+
+};
+
+
 struct Room
 {
 	Room( Stage *stage );

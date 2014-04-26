@@ -299,6 +299,7 @@ bool SingleActor::UpdatePrePhysics()
 
 bool SingleActor::ProcessCollisions()
 {
+	sprite[0]->get
 	for( int i = 0; i < GetHitsReceivedSize(); ++i )
 	{	
 		ActorHit &h = GetHitsReceived()[i];
@@ -608,4 +609,42 @@ void SingleActor::LoadState()
 
 	TrueActor::LoadState();
 
+}
+
+sf::FloatRect SingleActor::GetSpriteAABB()
+{
+	assert( spriteCount > 0 );
+
+	sf::FloatRect aabb = sprite[0]->getGlobalBounds();
+	for( uint32 i = 1; i < spriteCount; ++i )
+	{
+		if( !spriteIsEnabled[i] )
+		{
+			continue;
+		}
+
+		sf::FloatRect r = sprite[i]->getGlobalBounds();
+		if( r.left < aabb.left )
+		{ 
+			float oldLeft = aabb.left;
+			aabb.left = r.left;
+			aabb.width = ( oldLeft + aabb.width ) - aabb.left;
+		}
+		if( r.left + r.width > aabb.left + aabb.width )
+		{
+			aabb.width = ( r.left + r.width ) - aabb.left;
+		}
+
+		if( r.top < aabb.top )
+		{ 
+			float oldTop = aabb.top;
+			aabb.top = r.top;
+			aabb.height = ( oldTop + aabb.height ) - aabb.top;
+		}
+		if( r.top + r.height > aabb.top + aabb.height )
+		{
+			aabb.height = ( r.top + r.height ) - aabb.top;
+		}
+	}
+	return aabb;
 }

@@ -461,6 +461,8 @@ struct TrueActor : public b2RayCastCallback //change this later
 
 	void SetSpritePriority( uint32 spriteIndex, int32 priority );
 
+	virtual sf::FloatRect GetSpriteAABB() = 0;
+
 	int bodyType;
 	bool fixedAngle;
 	float restitution;
@@ -628,6 +630,8 @@ struct SingleActor : public TrueActor
 	uint32 & GetActorsAttackedSize();
 
 	uint32 & GetActorsAttackedIndex();
+
+	sf::FloatRect GetSpriteAABB();
 
 	virtual void SaveState();
 	virtual void LoadState();
@@ -879,6 +883,8 @@ struct GroupActor : public TrueActor
 	uint32 & GetActorsAttackedSize();
 
 	uint32 & GetActorsAttackedIndex();
+
+	sf::FloatRect GroupActor::GetSpriteAABB();
 
 	virtual void SaveState();
 	virtual void LoadState();
