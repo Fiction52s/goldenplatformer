@@ -44,7 +44,8 @@ void Room::Enter( const string &doorName )
 		eventBody->CreateFixture( (*it) );
 	}
 
-	for( list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
+
+	/*for( list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
 	{
 		ActorDef &ad = *(*it);
 
@@ -61,7 +62,7 @@ void Room::Enter( const string &doorName )
 		}
 
 		actors.push_back( a );
-	}
+	}*/
 	stage->c.mode = Camera::CameraMode::transition;
 	
 }
@@ -76,6 +77,12 @@ void Room::Exit()
 		//delete (*it);
 		(*it)->isAlive = false;
 	}
+
+	for( list<Squad*>::iterator it = squads.begin(); it != squads.end(); ++it )
+	{
+		(*it)->Deactivate();
+	}
+
 	actors.clear();
 	//cleanup 
 }
@@ -137,8 +144,16 @@ b2Vec2 Room::GetTempPoint( const string &name )
 	}
 }
 
-Squad::Squad( Stage *st )
-	:st( st )
+void Room::UpdateSquads( sf::Vector2f pos, sf::Vector2f size )
+{
+	for( list<Squad*>::iterator it = squads.begin(); it != squads.end(); ++it )
+	{
+		(*it)->CheckCamera( pos, size );
+	}
+}
+
+Squad::Squad( Stage *st, const string &name )
+	:name( name ), st( st ), initialized( false ), activated( false )
 {
 }
 
@@ -179,8 +194,27 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 			for( std::list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
 			{
 				ActorDef &ad = *(*it);
-				TrueActor *a = st->CreateActor( ad.type, ad.pos, ad.vel, ad.facingRight, 
+				TrueActor *a = new SingleActor( ad.type, ad.pos, ad.vel, ad.facingRight, 
 					ad.reverse, ad.angle, ad.parent );
+
+				//^^not sure if i should keep this here but it makes things a lot easier.
+				if( st->cloneWorld )
+				{
+					st->cloneActiveActors.push_back( a );
+				}
+				else
+				{
+					st->activeActors.push_back( a );
+				}
+
+				for( list<pair<string,float>>::iterator preInitMessagesIt = ad.preInitMessages.begin();
+					preInitMessagesIt != ad.preInitMessages.end(); ++preInitMessagesIt )
+				{
+					a->Message( NULL, (*preInitMessagesIt).first, (*preInitMessagesIt).second );
+				}
+
+				a->Init( st->world );
+
 				a->SetPause( true );
 				activeActors.push_back( a );	
 			}
@@ -232,4 +266,11 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 void Squad::DeactivateActor( TrueActor *actor )
 {
 	activeActors.remove( actor );
+}
+
+void Squad::Deactivate()
+{
+	activeActors.clear();
+	activated = false;
+	initialized = false;
 }

@@ -102,6 +102,8 @@ public:
 	//	NORMAL,
 	//	RUMBLE,
 	
+	
+
 	bool exitRoom;
 	uint32 playerPowers;
 	uint32 lives;
@@ -207,6 +209,11 @@ public:
 
 	Room *oldRoom;
 
+	std::list<TrueActor*> cloneAddedActors;
+	std::list<TrueActor*> cloneActiveActors;
+	std::list<TrueActor*> cloneKilledActors;
+
+	std::list<TrueActor*> activeActors;
 private:
 	TileSet * LoadTileSet( const std::string &dir,
 		const std::string &name, 
@@ -229,7 +236,7 @@ private:
 	std::list<StageCollision> collisions;
 	std::map<uint32, std::string> airHandlers;  
 	std::list<std::string> consumed;
-	std::list<TrueActor*> activeActors;
+	
 	std::list<TrueActor*> allActors;
 	std::list<TrueActor*> addedActors;
 
@@ -257,9 +264,7 @@ private:
 	void LevelRestart();
 
 
-	std::list<TrueActor*> cloneAddedActors;
-	std::list<TrueActor*> cloneActiveActors;
-	std::list<TrueActor*> cloneKilledActors;
+	
 	
 
 	void EnterCloneWorld();

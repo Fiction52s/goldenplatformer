@@ -1309,18 +1309,38 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 
 
 						attr = node->first_attribute();
-						string name = "";
+						string name = "-?-";
 						if( std::string(attr->name()) == "name" )
 						{
 							name = attr->value();
 							attr = attr->next_attribute();
 						}
 
+
+
 						if( std::string( attr->name() ) != "gid" )
 						{							
 							int x = boost::lexical_cast<int>( attr->value() );
 							attr = attr->next_attribute();
 							int y = boost::lexical_cast<int>( attr->value() );
+
+							//its a rectangle, meaning its the limiter rectangle
+							bool isLimitRect = false;
+
+							if( attr->next_attribute() != NULL )
+							{
+								attr = attr->next_attribute();
+								float32 roomWidth = boost::lexical_cast<float32>( attr->value() );
+								attr = attr->next_attribute();
+								float32 roomHeight = boost::lexical_cast<float32>( attr->value() );
+								isLimitRect = true;
+
+								room->top = y * SF2BOX;
+								room->bottom = ( y + roomHeight ) * SF2BOX;
+								room->left = x * SF2BOX;
+								room->right = ( x + roomWidth ) * SF2BOX;
+
+							}
 
 							bool circle = false;
 
@@ -1354,6 +1374,19 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 										}*/
 									}
 
+									if( isLimitRect )
+									{
+										if( boost::iequals( attrName, "top" ) ) room->limitTop = false;
+										else if( boost::iequals( attrName, "bottom" ) ) room->limitBottom = false;
+										else if( boost::iequals( attrName, "left" ) ) room->limitLeft = false;
+										else if( boost::iequals( attrName, "right" ) ) room->limitRight = false;
+										else
+										{
+											assert( 0 );
+										}
+
+										
+									}
 
 									if( node->next_sibling() != NULL )
 									{
@@ -1369,93 +1402,6 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 								node = node->parent();
 								//node = node->parent();
 							}
-
-							bool polyline = false;
-							if( !properties && node->first_node() != NULL )
-							{
-								node = node->first_node();
-								polyline = true;
-								//if( string( node->first_node()->name() ) == "polyline" )
-								//{
-
-								//}
-							}
-							else if( properties && node->next_sibling() != NULL )
-							{
-								node = node->next_sibling();
-								polyline = true;
-							}
-
-							if( polyline )
-							{
-								//if( string( node->first_node()->name() ) == "polyline" )
-								//{
-								room->name = name;
-								//node = node->first_node();
-								string points = node->first_attribute()->value();
-
-								stringstream pointStream( points );
-								int32 px=0,py=0;
-								while( pointStream >> px )
-								{
-									if( pointStream.peek() == ',' )
-										pointStream.ignore();
-
-									pointStream >> py;
-
-									px += x;
-									py += y;
-
-									room->border.push_back( b2Vec2( px * SF2BOX, py * SF2BOX ) );
-								}
-										
-
-								//removing final value because its the same as the first value
-								room->border.pop_back();
-
-								float32 &left = room->left;
-								float32 &right = room->right;
-								float32 &top = room->top;
-								float32 &bottom = room->bottom;
-
-								left = stageWidth * BOX2SF;
-								right = 0;
-								top = stageHeight * BOX2SF;
-								bottom = 0;
-										
-								for( list<b2Vec2>::iterator pIt = room->border.begin(); pIt != room->border.end();
-									++pIt )
-								{
-									b2Vec2 &p = (*pIt );
-
-									if( p.x < left ) left = p.x;
-									if( p.x > right ) right = p.x;
-									if( p.y < top )	top = p.y;
-									if( p.y > bottom ) bottom = p.y;
-								}
-
-
-								node = node->parent();
-
-								if( node->next_sibling() != NULL 
-									&& string(node->next_sibling()->name()) == "object" )
-								{
-									node = node->next_sibling();
-									continue;
-								}
-								else
-								{
-									break;
-								}
-										
-						
-							//	}
-								//else
-								//{
-							//		circle = true;
-							//	}
-							}
-
 
 							if( attr->next_attribute() == NULL )
 							{
@@ -3532,6 +3478,8 @@ bool Stage::Run()
 		//cout << "diff: " << viewSize.x - view.getSize().x  << ", " << viewSize.y - view.getSize().y << endl;
 		view.setSize( viewSize );
 		window->setView( view );
+
+		currentRoom->UpdateSquads();
 		
 		
 		//sf::View testView;
