@@ -16,6 +16,7 @@ class Stage;
 struct Squad
 {
 	Squad( Stage *st, const std::string &name );
+	~Squad();
 	std::list<TrueActor*> activeActors;
 	std::list<ActorDef*> actorDefs;
 	bool initialized; //started but paused

@@ -1,6 +1,7 @@
 #include "Room.h"
 #include <string>
 #include "Stage.h"
+#include <iostream> 
 
 using namespace std;
 
@@ -22,8 +23,8 @@ Room::~Room()
 	{
 		delete (*it);
 	}
-
-	for( list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
+	
+	for( list<Squad*>::iterator it = squads.begin(); it != squads.end(); ++it )
 	{
 		delete (*it);
 	}
@@ -148,6 +149,16 @@ void Room::UpdateSquads( sf::Vector2f pos, sf::Vector2f size )
 {
 	for( list<Squad*>::iterator it = squads.begin(); it != squads.end(); ++it )
 	{
+		/*cout << "checking camera for: " << (*it)->name;
+		if( (*it)->activated )
+			cout << ", its activated";
+		else
+			cout << ", its not activated";
+
+		if( (*it)->initialized )
+			cout << " and its initialized" <<endl;
+		else
+			cout << " and its not initialized" << endl;*/
 		(*it)->CheckCamera( pos, size );
 	}
 }
@@ -157,24 +168,53 @@ Squad::Squad( Stage *st, const string &name )
 {
 }
 
+Squad::~Squad()
+{
+	for( list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
+	{
+		delete (*it);
+	}
+}
+
 void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 {
-	if( activeActors.empty() )
+	if( name == "room" )
 	{
-		activated = false;
-		initialized = false;
+		if( initialized && activated )
+		{
+			return;
+		}
+		else
+		{
+			initialized = true;
+			activated = true;
+		}
 	}
 
+	//if( activeActors.empty() )
+	//{
+	//	activated = false;
+	//	initialized = false;
+	//}
+
 	b2Vec2 camPos( pos.x * SF2BOX, pos.y * SF2BOX );
+	
 	b2Vec2 camSize( size.x * SF2BOX, size.y * SF2BOX );
+	//cout << "camSize: " << camSize.x << ", " << camSize.y << endl;
 	b2Vec2 camHalfSize( camSize.x / 2, camSize.y / 2 );
+	//cout << "camhalfSize: " << camHalfSize.x << ", " << camHalfSize.y << endl;
 	
 	float32 camLeft = camPos.x - camHalfSize.x;
 	float32 camRight = camPos.x + camHalfSize.x;
 	float32 camTop = camPos.y - camHalfSize.y;
 	float32 camBottom = camPos.y + camHalfSize.y;
 
-	sf::FloatRect camRect( camLeft, camTop, camSize.x, camSize.y );
+	//cout << "camleft: " << camLeft << ", camRight: " << camRight << ", camTop: " 
+	//	<< camTop << ", camBottom: " << camBottom << endl;
+	sf::FloatRect camActorRect( camLeft, camTop, camSize.x, camSize.y );
+	sf::FloatRect camRect( pos.x - size.x /2, pos.y - size.y / 2, size.x, size.y );
+	sf::FloatRect medRect( camPos.x - camSize.x, camPos.y - camSize.y, 
+		camSize.x * 2, camSize.y * 2 );
 
 	if( !initialized )
 	{	
@@ -182,7 +222,8 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 		{
 			ActorDef &ad = *(*it);
 			b2Vec2 actorPos( ad.pos );
-			if( actorPos.x > camLeft && actorPos.x < camRight && actorPos.y > camTop && actorPos.y < camBottom )
+			if( actorPos.x >= medRect.left && actorPos.x <= ( medRect.left + medRect.width ) 
+				&& actorPos.y >= medRect.top && actorPos.y <= ( medRect.top + medRect.height ) )
 			{
 				initialized = true;
 				break;
@@ -195,8 +236,8 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 			{
 				ActorDef &ad = *(*it);
 				TrueActor *a = new SingleActor( ad.type, ad.pos, ad.vel, ad.facingRight, 
-					ad.reverse, ad.angle, ad.parent );
-
+					ad.reverse, ad.angle, ad.parent, st );
+				a->squad = ad.squad;
 				//^^not sure if i should keep this here but it makes things a lot easier.
 				if( st->cloneWorld )
 				{
@@ -214,18 +255,20 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 				}
 
 				a->Init( st->world );
+				a->UpdateSprites();
 
 				a->SetPause( true );
 				activeActors.push_back( a );	
 			}
 		}
 	}
-	else if( !activated )
+	if( initialized && !activated )
 	{
 		for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 		{
 			TrueActor *a = (*it);
 			sf::FloatRect aabb = a->GetSpriteAABB();
+			
 			if( aabb.intersects( camRect ) )
 			{
 				activated = true;
@@ -241,24 +284,56 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 			}
 		}
 	}
-	else
+	
+	if( initialized && activated )
 	{
-		sf::FloatRect largeRect( camLeft - camSize.x, camTop - camSize.y, camSize.x * 2, camSize.y * 2 );
+		//sf::FloatRect largeRect( camLeft - camSize.x, camTop - camSize.y, camSize.x * 2, camSize.y * 2 );
 
-		for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); )
+		if( !activeActors.empty() )
 		{
-			TrueActor *a = (*it);
-			sf::FloatRect aabb = a->GetSpriteAABB();
-			if( !aabb.intersects( largeRect ) )
+			sf::FloatRect largeRect( camRect.left - size.x, camRect.top - size.y, size.x * 3, size.y * 3 );
+
+			for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); )
 			{
-				it = activeActors.erase( it );
-				a->Kill();
-			}
-			else
-			{
-				++it;
+				TrueActor *a = (*it);
+				sf::FloatRect aabb = a->GetSpriteAABB();
+				if( !aabb.intersects( largeRect ) )
+				{
+					it = activeActors.erase( it );
+					a->Kill();
+				}
+				else
+				{
+					++it;
+				}
 			}
 		}
+		else
+		{
+			bool reset = true;
+			for( std::list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
+			{
+				ActorDef &ad = *(*it);
+				b2Vec2 actorPos( ad.pos );
+
+				if( actorPos.x >= medRect.left && actorPos.x <= ( medRect.left + medRect.width ) 
+				&& actorPos.y >= medRect.top && actorPos.y <= ( medRect.top + medRect.height ) )
+				//if( actorPos.x >= camLeft && actorPos.x <= camRight
+				//	&& actorPos.y >= camTop && actorPos.y <= camBottom )
+				{
+					reset = false;
+					break;
+				}
+			}
+
+			if( reset )
+			{
+				initialized = false;
+				activated = false;
+			}
+		}
+
+		
 	}
 	
 }

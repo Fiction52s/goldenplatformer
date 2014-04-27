@@ -23,7 +23,6 @@ namespace CollisionLayers
 		ActorDetectionbox,
 		PlayerDetectionbox,
 		PlayerEventCollisionbox,
-		ActivateBox,
 		Door
 	};
 	void SetupFixture(CollisionLayers::Layer layer ,

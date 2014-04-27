@@ -194,6 +194,7 @@ struct RayCastInfo
 	//back at the beginning
 };*/
 
+struct Squad;
 struct ActorDef
 {
 	ActorDef( const std::string &p_type, uint32 p_actorCount, 
@@ -211,6 +212,7 @@ struct ActorDef
 	TrueActor *parent;
 	std::list<std::pair<std::string, 
 		float32>> preInitMessages;
+	Squad *squad;
 };
 
 struct TrueActor;
@@ -263,6 +265,8 @@ struct ActorParams
 	
 	b2BodyDef def; //do i need this?
 	b2Vec2 *spriteOffset;
+
+	
 
 	b2AABB aabb;
 	bool isAlive;
@@ -495,6 +499,7 @@ struct TrueActor : public b2RayCastCallback //change this later
 	bool save_isReversed;
 	uint32 save_health;
 	
+	Squad *squad;
 
 	virtual void SaveState();
 	virtual void LoadState();

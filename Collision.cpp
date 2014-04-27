@@ -31,7 +31,7 @@ void CollisionLayers::SetupFixture(CollisionLayers::Layer layer, uint16 &categor
 			maskBits |= 1 << EnemyHitbox;
 			maskBits |= 1 << ActorDetectionbox;
 			maskBits |= 1 << PlayerDetectionbox;
-			maskBits |= 1 << ActivateBox;
+			//maskBits |= 1 << ActivateBox;
 			break;
 		case PlayerPhysicsbox:
 			maskBits |= 1 << Environment;
@@ -69,9 +69,9 @@ void CollisionLayers::SetupFixture(CollisionLayers::Layer layer, uint16 &categor
 			maskBits |= 1 << Event;
 			maskBits |= 1 << Door;
 			break;
-		case ActivateBox:
-			maskBits |= 1 << PlayerHurtbox;
-			break;
+		//case ActivateBox:
+		//	maskBits |= 1 << PlayerHurtbox;
+		//	break;
 		case Door:
 			maskBits |= 1 << PlayerEventCollisionbox;
 			maskBits |= 1 << EnemyPhysicsbox;
@@ -101,35 +101,6 @@ void ContactListener::BeginContact(b2Contact* contact)
 			doorEnterPos.x = stage->player->GetPosition().x;
 			doorEnterPos.y = stage->player->GetPosition().y;
 		}
-	}
-
-
-	b2Body *b = NULL;
-	
-	if ( contact->GetFixtureA()->GetFilterData().categoryBits 
-		== 1 << CollisionLayers::ActivateBox )
-	{
-		b = contact->GetFixtureA()->GetBody();
-		
-		//->Message( NULL,
-	}
-	else if ( contact->GetFixtureB()->GetFilterData().categoryBits 
-		== 1 << CollisionLayers::ActivateBox )
-	{
-		b = contact->GetFixtureB()->GetBody();
-		
-	}
-
-	if( b != NULL )
-	{
-		list<TrueActor*> *aList = (list<TrueActor*>*)(b->GetUserData() );
-		list<TrueActor*> &listRef = *aList;
-		
-		for( list<TrueActor*>::iterator listIt = listRef.begin(); listIt != listRef.end(); ++listIt )
-		{
-			(*listIt)->Message( NULL, "activate", 0 );
-		}
-		b->SetActive( false );
 	}
 
 

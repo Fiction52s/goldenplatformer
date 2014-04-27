@@ -299,7 +299,7 @@ bool SingleActor::UpdatePrePhysics()
 
 bool SingleActor::ProcessCollisions()
 {
-	sprite[0]->get
+	//sprite[0]->get
 	for( int i = 0; i < GetHitsReceivedSize(); ++i )
 	{	
 		ActorHit &h = GetHitsReceived()[i];
@@ -613,16 +613,25 @@ void SingleActor::LoadState()
 
 sf::FloatRect SingleActor::GetSpriteAABB()
 {
+	//return sf::FloatRect( sprite[0]->getPosition().x, sprite[0]->getPosition().y,
+	//	0, 0 );
+
+	//cout << "call aabb" << endl;
 	assert( spriteCount > 0 );
 
+	//cout << "before global bounds" << endl;
 	sf::FloatRect aabb = sprite[0]->getGlobalBounds();
+	//sf::IntRect test = sprite[0]->getTextureRect();
+	//cout << "test w/h: " << test.width << ", " << test.height << endl;
+	//cout << "after global bounds" << endl;
 	for( uint32 i = 1; i < spriteCount; ++i )
 	{
 		if( !spriteIsEnabled[i] )
 		{
+			
 			continue;
 		}
-
+		
 		sf::FloatRect r = sprite[i]->getGlobalBounds();
 		if( r.left < aabb.left )
 		{ 

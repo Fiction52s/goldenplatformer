@@ -1107,8 +1107,8 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 							b2FixtureDef fdef;
 							fdef.isSensor = true;
 
-							CollisionLayers::SetupFixture( CollisionLayers::ActivateBox, fdef.filter.categoryBits, 
-									fdef.filter.maskBits );
+							//CollisionLayers::SetupFixture( CollisionLayers::ActivateBox, fdef.filter.categoryBits, 
+							//		fdef.filter.maskBits );
 
 
 							if( circle )
@@ -1299,8 +1299,8 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 					//b2Body * activationBody = world->CreateBody( &activationDef );
 
 					Room *room = new Room( this );
-
-					
+					room->name = layerName;
+					map<string, Squad*> squadMap;
 
 
 					while( node != NULL && string(node->name()) == "object" )
@@ -1384,8 +1384,6 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 										{
 											assert( 0 );
 										}
-
-										
 									}
 
 									if( node->next_sibling() != NULL )
@@ -1430,15 +1428,15 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 								
 							}
 							
-							attr = attr->next_attribute();
+							/*attr = attr->next_attribute();
 							int w = boost::lexical_cast<int>( attr->value() );
 							attr = attr->next_attribute();
-							int h = boost::lexical_cast<int>( attr->value() );
+							int h = boost::lexical_cast<int>( attr->value() );*/
 
 							//b2BodyDef def;
 							//def.position = b2Vec2( ( x + w / 2.f ) * SF2BOX, ( y + h / 2.f ) * SF2BOX );
 							//b2Body * b = world->CreateBody( &def );
-							b2FixtureDef fdef;
+						/*	b2FixtureDef fdef;
 							fdef.isSensor = true;
 
 							CollisionLayers::SetupFixture( CollisionLayers::ActivateBox, fdef.filter.categoryBits, 
@@ -1468,6 +1466,8 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 							}
 
 							//activationBody->SetUserData( (void*)squad );
+
+							*/
 							
 							if( node->next_sibling() != NULL )
 							{
@@ -1510,6 +1510,8 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						//bool reverse = false;
 						//list<pair<string, float>> preInitMessages;
 
+						bool inSquad = false;
+
 						if( node->first_node() != NULL ) //checks if there are any properties
 						{
 							node = node->first_node();
@@ -1524,6 +1526,30 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 								if( boost::iequals( attrName, "angle" ) )
 								{
 									ad->angle = boost::lexical_cast<float>( attr->value() );
+								}
+								else if( boost::iequals( attrName, "squad" ) )
+								{
+									inSquad = true;
+
+									string squadName = attr->value();
+
+									Squad *sq = NULL;
+									if( squadMap.count( squadName ) == 0 )
+									{
+										sq = new Squad( this, squadName );
+										squadMap[squadName] = sq;
+									}
+									else
+									{
+										sq = squadMap[squadName];
+									}
+									
+									ad->squad = sq;
+
+									sq->actorDefs.push_back( ad );
+									
+									
+									
 								}
 								else if( boost::iequals( attrName, "vel" ) )
 								{
@@ -1588,6 +1614,19 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 							node = node->parent();
 						}
 
+						if( !inSquad && ad->type != "player" )
+						{
+							
+							std::stringstream ss;
+							//unique name for this squad
+							ss << (uint32)ad << "-" << ad->type << endl;
+							string squadName = ss.str();
+
+							Squad *sq = new Squad( this, squadName );
+							squadMap[squadName] = sq;
+							sq->actorDefs.push_back( ad );			
+							ad->squad = sq;
+						}
 
 						TileSet *set = GlobalToLocal( id );
 						
@@ -1616,7 +1655,8 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						}
 						else
 						{
-							room->actorDefs.push_back( ad );
+
+							//room->actorDefs.push_back( ad );
 						}
 
 						//squad->push_back( a );
@@ -1643,6 +1683,12 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 							break;
 						}
 					}
+
+					for( map<string, Squad*>::iterator it = squadMap.begin(); it != squadMap.end(); ++it )
+					{
+						room->squads.push_back( (*it).second );
+					}
+					//squadMap.clear();
 
 					rooms.push_back( room );
 
@@ -2457,6 +2503,11 @@ bool Stage::UpdatePrePhysics()
 						}
 					}*/
 
+					if( a->squad != NULL )
+					{
+						a->squad->DeactivateActor( a );
+					}
+
 					if( cloneWorld )
 					{
 						cloneKilledActors.push_back( a );
@@ -2925,7 +2976,7 @@ bool Stage::Run()
 		}
 	}
 
-	
+	sf::Vector2f viewSize;
 	
 
 	while ( !quit )
@@ -3333,7 +3384,48 @@ bool Stage::Run()
 
 			UpdatePostPhysics();
 
-			
+			viewSize = ( sf::Vector2f( 1920, 1080 ) * c.zoom );
+	
+			viewSize.x = floor( viewSize.x + .5f );
+			viewSize.y = floor( viewSize.y + .5f );
+		
+			view.setSize( viewSize );
+
+			for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+			{
+				if( (*it)->squad == NULL && (*it) != player )
+				{
+					if( (*it)->parent == NULL )
+					{
+						sf::FloatRect r = (*it)->GetSpriteAABB();
+					
+						sf::Vector2f pos = view.getCenter();
+						sf::Vector2f size = viewSize;
+
+					
+						b2Vec2 camPos( pos.x * SF2BOX, pos.y * SF2BOX );
+						b2Vec2 camSize( size.x * SF2BOX, size.y * SF2BOX );
+						b2Vec2 camHalfSize( camSize.x / 2, camSize.y / 2 );
+	
+						float32 camLeft = camPos.x - camHalfSize.x;
+						float32 camRight = camPos.x + camHalfSize.x;
+						float32 camTop = camPos.y - camHalfSize.y;
+						float32 camBottom = camPos.y + camHalfSize.y;
+
+						sf::FloatRect cRect( camLeft, camTop, camSize.x, camSize.y );
+						sf::FloatRect largeRect( camLeft - camSize.x, camTop - camSize.y, camSize.x * 2, camSize.y * 2 );
+
+						if( !r.intersects( largeRect ) )
+						{
+							(*it)->Kill();
+						}
+					}
+				}
+			}
+
+		
+		
+			currentRoom->UpdateSquads( view.getCenter(), viewSize );
 			
 			//cout << "posttime: " << testClock.getElapsedTime().asSeconds()<< endl;
 
@@ -3470,16 +3562,14 @@ bool Stage::Run()
 		
 		//mapView.setSize( sf::Vector2f( rt.getSize() ) * cameraZoom );
 		//cout << "cameraZoom: " << cameraZoom << endl;
-		sf::Vector2f viewSize( sf::Vector2f( 1920, 1080 ) * c.zoom );
 		
-		//cout << "viewSize: " << viewSize.x << ", " << viewSize.y << endl;
-		viewSize.x = floor( viewSize.x + .5f );
-		viewSize.y = floor( viewSize.y + .5f );
-		//cout << "diff: " << viewSize.x - view.getSize().x  << ", " << viewSize.y - view.getSize().y << endl;
-		view.setSize( viewSize );
 		window->setView( view );
 
-		currentRoom->UpdateSquads();
+		//before the squad update because it does not create any actors
+		
+	
+		
+		
 		
 		
 		//sf::View testView;
@@ -4210,6 +4300,8 @@ void Stage::UpdatePostPhysics()
 //		}
 		
 	}
+
+
 
 
 	
