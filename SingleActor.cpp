@@ -655,5 +655,6 @@ sf::FloatRect SingleActor::GetSpriteAABB()
 			aabb.height = ( r.top + r.height ) - aabb.top;
 		}
 	}
+	//cout << "aabb w/h: " << aabb.width << ", " << aabb.height << endl;
 	return aabb;
 }

@@ -67,7 +67,7 @@ sf::IntRect TileSet::GetSubRect( uint32 localID )
 }
 
 Camera::Camera( Stage *stage )
-	:offsetSpeed( .1 ), mode( normal ), stage( stage ), maxZoom( 2 ), zoom( 1 ), slowCounter( 0 )
+	:offsetSpeed( .1 ), mode( normal ), stage( stage ), maxZoom( 2.5 ), zoom( 1 ), slowCounter( 0 )
 {
 	//UpdatePosition();
 	offset.x = 0;
@@ -77,8 +77,8 @@ Camera::Camera( Stage *stage )
 sf::Vector2f Camera::GetViewPos()
 {
 	sf::Vector2f viewPos( pos.x * BOX2SF, pos.y * BOX2SF );
-	viewPos.x = floor( viewPos.x + .5f );
-	viewPos.y = floor( viewPos.y + .5f );
+	//viewPos.x = floor( viewPos.x + .5f );
+	//viewPos.y = floor( viewPos.y + .5f );
 
 	return viewPos;
 }
@@ -96,12 +96,12 @@ void Camera::UpdateZoom()
 		//zoom = stage->GetCameraZoom();
 		PlayerChar *player = stage->player;
 		float xVelAbs = abs( player->GetVelocity().x - player->GetCarryVelocity().x );
-		float zoomGoal = 1 + xVelAbs * .02;
+		float zoomGoal =  (xVelAbs * .02) * maxZoom;
 		
 	
 		if( abs( player->GetVelocity().y ) >= 44 )
 		{
-			zoom += .02;
+			//zoom += .02;
 		}
 
 		bool zoomedOut = false;
@@ -131,10 +131,15 @@ void Camera::UpdateZoom()
 		}
 
 		if( zoom > maxZoom ) zoom = maxZoom;
+
+		//zoom = 2.5;
+		//zoom = 2.5;
 	}
 	else
 	{
 	}
+
+	cout << "zoom: " << zoom << endl;
 
 	//stage->SetCameraZoom( zoom );
 	//cout << "zoom : " << zoom << endl;
@@ -151,6 +156,8 @@ void Camera::UpdatePosition( Room * currentRoom )
 
 	float transitionSpeed = .5f;
 	b2Vec2 diff;
+
+	uint32 testx;
 
 	switch( mode )
 	{
@@ -197,7 +204,7 @@ void Camera::UpdatePosition( Room * currentRoom )
 
 			viewPos = GetViewPos();
 			
-
+			
 	
 			stage->view.setCenter( viewPos );
 			stage->mapView.setCenter( viewPos );
@@ -241,6 +248,21 @@ void Camera::UpdatePosition( Room * currentRoom )
 				stage->view.setCenter( viewPos );
 				stage->mapView.setCenter( viewPos );
 			}
+			
+			//testx = (int32)viewPos.x % ;
+			if( testx < 32 )
+			{
+			//	viewPos.x += testx;
+			}
+			else
+			{
+//				viewPos.x -= 64 - testx;
+			}
+			//viewPos.x += ( (int32)viewPos.x % 64 );
+			//viewPos.y += ( (int32)viewPos.y % 64 );
+			//stage->view.setCenter( viewPos );
+
+
 			pos.x = viewPos.x * SF2BOX;
 			pos.y = viewPos.y * SF2BOX;
 
@@ -1851,7 +1873,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 			for( int y = 0; y < stageHeight; ++y )
 			{
 				//if empty, continue
-				if( staticTileSets[x][y] == NULL | tileSetMap[staticTileSets[x][y]] == NULL )
+				if( staticTileSets[x][y] == NULL || tileSetMap[staticTileSets[x][y]] == NULL )
 					continue;
 
 
@@ -2412,6 +2434,8 @@ bool Stage::UpdatePrePhysics()
 		}
 	}
 
+	//cout << "number of actors: " << activeActors.size() << endl;
+
 
 	//use AABB of the player to get which air tiles he is touching
 	list<uint32> activeAirTiles;
@@ -2540,6 +2564,7 @@ bool Stage::UpdatePrePhysics()
 								assert( 0 );
 							}
 						}
+
 						delete a;
 
 					}
@@ -2843,10 +2868,12 @@ bool Stage::Run()
 
 	sf::RenderTexture rt;
 	//rt.create( 1920, 1080);
-	rt.create( 3840, 2160);
+	
+	rt.create( 1920 * c.maxZoom, 1080 * c.maxZoom);
 	rt.setSmooth( true );
+
 	//rt.create( window->getSize().x, window->getSize().y );
-	mapView.setSize( 3840, 2160 );
+	mapView.setSize( 1920 * c.maxZoom, 1080 * c.maxZoom);
 	sf::Vector2f sp( -1,-1 );//player->m_startPosition.x, player->m_startPosition.y );
 	//sp *= BOX2SF;
 
@@ -3160,6 +3187,12 @@ bool Stage::Run()
 				{
 					m_skipFrame = true;
 					prevInput = storedInput;
+
+					for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+					{
+						cout << "actor: " << (*it)->GetType() << ", (" << (*it)->GetPosition().x 
+							<< ", " << (*it)->GetPosition().y << endl;
+					}
 				}
 
 				if( !m_skipFrame )
@@ -3388,6 +3421,9 @@ bool Stage::Run()
 	
 			viewSize.x = floor( viewSize.x + .5f );
 			viewSize.y = floor( viewSize.y + .5f );
+
+			//viewSize.x += ( (uint32)viewSize.x % 64 );
+			//viewSize.y += ( (uint32)viewSize.y % 64 );
 		
 			view.setSize( viewSize );
 
@@ -3414,8 +3450,9 @@ bool Stage::Run()
 
 						sf::FloatRect cRect( camLeft, camTop, camSize.x, camSize.y );
 						sf::FloatRect largeRect( camLeft - camSize.x, camTop - camSize.y, camSize.x * 2, camSize.y * 2 );
+						sf::FloatRect lRect( pos.x - size.x * 1, pos.y - size.y * 1.5, size.x * 2, size.y * 3 );
 
-						if( !r.intersects( largeRect ) )
+						if( !r.intersects( lRect ) )
 						{
 							(*it)->Kill();
 						}
@@ -3599,8 +3636,8 @@ bool Stage::Run()
 				//sf::Vector2f one = sf::Vector2f( 1920 * 2, 1080 * 2) * ( 1 +( 2 - (1 + ( 2 - cameraZoom ) * sr ) ) * ( 1 + ( 1 - ( 2 - cameraZoom ) ) )); 
 				//sf::Vector2f one = sf::Vector2f( 1920 * 2, 1080 * 2) *  ( ( 2 - ( 2 - cameraZoom ) * sr ) );
 				//sf::Vector2f two = sf::Vector2f( 1920 * 2, 1080 * 2) * ( 2- cameraZoom * sr );
-				sf::Vector2f one = sf::Vector2f( 1920 * 2, 1080 * 2 );
-				one += sf::Vector2f( 1920 * 2, 1080 * 2 ) *  ( c.zoom - 1 ) * ( sr );
+				sf::Vector2f one = sf::Vector2f( 1920 * c.maxZoom, 1080 * c.maxZoom );
+				one += sf::Vector2f( 1920 * c.maxZoom, 1080 * c.maxZoom ) *  ( c.zoom - 1 ) * ( sr );
 				one -= viewSize - sf::Vector2f(1920, 1080);
 				
 				//one -= sf::Vector2f( 1920, 1080 ) * (cameraZoom - 1 ); //(1 - cameraZoom);
@@ -3744,35 +3781,9 @@ bool Stage::Run()
 		//topTile = (int)player->GetPosition().y - 10;
 		//bottomTile = topTile + 20;
 		statClock.restart();
-		for( int tx = leftTile; tx < rightTile; ++tx )
-		{
-			for( int ty = topTile; ty < bottomTile; ++ty )
-			{
-				if( staticTileSets[tx][ty] != NULL )
-				{
-					int tc = ((tx - leftTile) + (ty - topTile) * viewHalfWidthTiles * 2) * 4;
-
-					VertexArray &map = *(texVertexMap[staticTileSets[tx][ty]->texture]);
-					// define the position of the 4 points of the current tile 
-					map[tc + 0].position = sf::Vector2f((tx + 0) * tileSize, (ty + 0) * tileSize); 
-					map[tc + 1].position = sf::Vector2f((tx + 0) * tileSize, (ty + 1) * tileSize); 
-					map[tc + 2].position = sf::Vector2f((tx + 1) * tileSize, (ty + 1) * tileSize); 
-					map[tc + 3].position = sf::Vector2f((tx + 1) * tileSize, (ty + 0) * tileSize); 
-
-					// define the texture coordinates of the 4 points of the current tile 
-					float blend = 0.5f;
-					int ix = staticTileSets[tx][ty]->GetSubRect( staticLocalID[tx][ty] ).left / tileSize; // X index of the tile in the tileset 
-					int iy = staticTileSets[tx][ty]->GetSubRect( staticLocalID[tx][ty] ).top / tileSize; // Y index of the tile in the tileset ; 
-					map[tc+ 0].texCoords = sf::Vector2f((ix + 0) * tileSize + blend, (iy + 0) * tileSize + blend); 
-					map[tc+ 1].texCoords = sf::Vector2f((ix + 0) * tileSize + blend, (iy + 1) * tileSize - blend); 
-					map[tc+ 2].texCoords = sf::Vector2f((ix + 1) * tileSize - blend, (iy + 1) * tileSize - blend); 
-					map[tc+ 3].texCoords = sf::Vector2f((ix + 1) * tileSize - blend, (iy + 0) * tileSize + blend); 
-				}
-				else
-				{
-				}
-			}
-		}
+		//uint32 tempTileSize = tileSize / 2;
+		//tileSize = 32;
+		
 		sf::Time sct = statClock.getElapsedTime();
 		
 		//rt.clear(sf::Color::Red );
@@ -3838,7 +3849,57 @@ bool Stage::Run()
 			}
 		}
 		
+		sf::View testv( mapView );
+		testv.setSize( mapView.getSize().x / 2, mapView.getSize().y / 2 );
+	//	rt.setView( testv );
 
+		for( int tx = leftTile; tx < rightTile; ++tx )
+		{
+			for( int ty = topTile; ty < bottomTile; ++ty )
+			{
+				if( staticTileSets[tx][ty] != NULL )
+				{
+					int tc = ((tx - leftTile) + (ty - topTile) * viewHalfWidthTiles * 2) * 4;
+					tileSize = 64;
+					VertexArray &map = *(texVertexMap[staticTileSets[tx][ty]->texture]);
+					// define the position of the 4 points of the current tile 
+
+					map[tc + 0].position = sf::Vector2f((tx + 0) * tileSize, (ty + 0) * tileSize); 
+					map[tc + 1].position = sf::Vector2f((tx + 0) * tileSize, (ty + 1) * tileSize); 
+					map[tc + 2].position = sf::Vector2f((tx + 1) * tileSize, (ty + 1) * tileSize); 
+					map[tc + 3].position = sf::Vector2f((tx + 1) * tileSize, (ty + 0) * tileSize); 
+
+					//map[tc + 0].position = sf::Vector2f((tx + 0) * tileSize + 16, (ty + 0) * tileSize + 16); 
+					//map[tc + 1].position = sf::Vector2f((tx + 0) * tileSize + 16, (ty + 1) * tileSize -16 ); 
+					//map[tc + 2].position = sf::Vector2f((tx + 1) * tileSize -16, (ty + 1) * tileSize -16 ); 
+					//map[tc + 3].position = sf::Vector2f((tx + 1) * tileSize -16, (ty + 0) * tileSize + 16); 
+
+					// define the texture coordinates of the 4 points of the current tile 
+					float blend = 1.f;//.5f;// 0.f;//-.5f;//0.5f;
+					if( c.zoom > 1.5 && c.zoom < 2 )
+					{
+						tileSize = 32;
+						//cout << "tile size is 16" << endl;
+					}
+					else if( c.zoom > 2 )
+					{
+						tileSize = 16;
+					}
+					int ix = staticTileSets[tx][ty]->GetSubRect( staticLocalID[tx][ty] ).left / tileSize; // X index of the tile in the tileset 
+					int iy = staticTileSets[tx][ty]->GetSubRect( staticLocalID[tx][ty] ).top / tileSize; // Y index of the tile in the tileset ; 
+					map[tc+ 0].texCoords = sf::Vector2f((ix + 0) * tileSize + blend, (iy + 0) * tileSize + blend); 
+					map[tc+ 1].texCoords = sf::Vector2f((ix + 0) * tileSize + blend, (iy + 1) * tileSize - blend); 
+					map[tc+ 2].texCoords = sf::Vector2f((ix + 1) * tileSize - blend, (iy + 1) * tileSize - blend); 
+					map[tc+ 3].texCoords = sf::Vector2f((ix + 1) * tileSize - blend, (iy + 0) * tileSize + blend); 
+				}
+				else
+				{
+				}
+			}
+		}
+		tileSize = 64;
+
+		//rt.setView( testv );
 		//drawing the map
 		statClock.restart();
 		for( std::map<sf::Texture*, sf::VertexArray*>::iterator mapIt = texVertexMap.begin(); 
@@ -3847,6 +3908,29 @@ bool Stage::Run()
 			rt.draw( *(*mapIt).second, (*mapIt).first );
 			//window->draw( *(*mapIt).second, (*mapIt).first );
 		}
+
+		//cout << "left: " << leftTile << ", right: " << rightTile << ", top: " << topTile << ", bottom: " << bottomTile << endl;
+		for( int tx = leftTile; tx < rightTile; ++tx )
+		{
+			for( int ty = topTile; ty < bottomTile; ++ty )
+			{
+				if( staticTileSets[tx][ty] != NULL )
+				{
+					int tc = ((tx - leftTile) + (ty - topTile) * viewHalfWidthTiles * 2) * 4;
+					tileSize = 64;
+					VertexArray &map = *(texVertexMap[staticTileSets[tx][ty]->texture]);
+					// define the position of the 4 points of the current tile 
+
+					map[tc + 0].position = sf::Vector2f((tx + 0) * tileSize, (ty + 0) * tileSize); 
+					map[tc + 1].position = sf::Vector2f((tx + 0) * tileSize, (ty + 0) * tileSize); 
+					map[tc + 2].position = sf::Vector2f((tx + 0) * tileSize, (ty + 0) * tileSize); 
+					map[tc + 3].position = sf::Vector2f((tx + 0) * tileSize, (ty + 0) * tileSize); 
+				}
+			}
+		}
+		//assert( tileSize == 64 );
+		tileSize = 64;
+		rt.setView( mapView );
 
 		
 
@@ -4535,6 +4619,8 @@ SingleActor * Stage::CreateActor( const std::string &type, b2Vec2 &pos, b2Vec2 &
 	else
 	{
 		SingleActor *a = new SingleActor( type, pos, vel, facingRight, reverse, angle, parent, this );
+		assert( currentRoom != NULL );
+		a->room = currentRoom;
 		if( cloneWorld )
 		{
 			cloneAddedActors.push_back( a );
@@ -4543,6 +4629,7 @@ SingleActor * Stage::CreateActor( const std::string &type, b2Vec2 &pos, b2Vec2 &
 		{
 			addedActors.push_back( a );
 		}
+		
 		return a;
 		//activeActors.push_back( a );
 	}	
@@ -5320,6 +5407,8 @@ void Stage::LevelRestart()
 	player->actorParams->actorsAttackedSize = 0;
 
 	SetRoom( startRoom );
+	exitRoom = true;
+
 	b2Vec2 &spawnPoint = startRoom->GetSpawnPoint();
 	SetCameraPosition( spawnPoint.x, spawnPoint.y );
 	SetCameraZoom( 1 );

@@ -213,9 +213,9 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 	bool facingRight, bool reverse, float32 angle, TrueActor *parent, Stage*st )
 	:stage( st ), parent( parent ), facingRight( facingRight ), isReversed( reverse ),
 	actorType( actorType ), hitsReceivedCap( 4 ), bodyCollisionsCap( 4 ), actorsAttackedCap( 16 ), 
-	isAlive( false ), isGroup(false), squad( NULL ) //yes there are 2 isAlives on single actors. oh well
+	isAlive( false ), isGroup(false), squad( NULL ), room( NULL ) //yes there are 2 isAlives on single actors. oh well
 {
-
+	//cout << "creating true actor:" << (uint32)(this) << endl;
 	L = luaL_newstate();
 	luaL_openlibs( L );
 
@@ -428,6 +428,7 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 
 TrueActor::~TrueActor()
 {
+	//cout << "destroy true actor: " << (uint32)this << endl;
 	delete [] spritePriority;
 }
 

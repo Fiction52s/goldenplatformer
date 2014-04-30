@@ -213,6 +213,7 @@ struct ActorDef
 	std::list<std::pair<std::string, 
 		float32>> preInitMessages;
 	Squad *squad;
+	Room *room;
 };
 
 struct TrueActor;
@@ -500,6 +501,7 @@ struct TrueActor : public b2RayCastCallback //change this later
 	uint32 save_health;
 	
 	Squad *squad;
+	Room *room;
 
 	virtual void SaveState();
 	virtual void LoadState();

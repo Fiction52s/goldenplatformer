@@ -64,7 +64,8 @@ void Room::Enter( const string &doorName )
 
 		actors.push_back( a );
 	}*/
-	stage->c.mode = Camera::CameraMode::transition;
+	
+	//stage->c.mode = Camera::CameraMode::transition;
 	
 }
 
@@ -73,10 +74,15 @@ void Room::Exit()
 	stage->world->DestroyBody( eventBody );
 	eventBody = NULL;
 
-	for( list<TrueActor*>::iterator it = actors.begin(); it != actors.end(); ++it )
+	for( list<TrueActor*>::iterator it = stage->activeActors.begin(); it != stage->activeActors.end(); ++it )
 	{
+		cout << "type: " << (*it)->GetType() << endl;
 		//delete (*it);
-		(*it)->isAlive = false;
+		//if( (*it)->room == this )
+		//{
+			//(*it)->isAlive = false;
+			//(*it)->Kill();
+	//	}
 	}
 
 	for( list<Squad*>::iterator it = squads.begin(); it != squads.end(); ++it )
@@ -84,7 +90,7 @@ void Room::Exit()
 		(*it)->Deactivate();
 	}
 
-	actors.clear();
+	//actors.clear();
 	//cleanup 
 }
 
@@ -213,8 +219,10 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 	//	<< camTop << ", camBottom: " << camBottom << endl;
 	sf::FloatRect camActorRect( camLeft, camTop, camSize.x, camSize.y );
 	sf::FloatRect camRect( pos.x - size.x /2, pos.y - size.y / 2, size.x, size.y );
-	sf::FloatRect medRect( camPos.x - camSize.x, camPos.y - camSize.y, 
-		camSize.x * 2, camSize.y * 2 );
+	sf::FloatRect medRect( camPos.x - camSize.x * .75, camPos.y - camSize.y * .75, 
+		camSize.x * 1.5, camSize.y * 1.5 );
+	//sf::FloatRect medRect = camActorRect;
+
 
 	if( !initialized )
 	{	
@@ -284,14 +292,13 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 			}
 		}
 	}
-	
-	if( initialized && activated )
+	else if	( initialized && activated )
 	{
 		//sf::FloatRect largeRect( camLeft - camSize.x, camTop - camSize.y, camSize.x * 2, camSize.y * 2 );
 
 		if( !activeActors.empty() )
 		{
-			sf::FloatRect largeRect( camRect.left - size.x, camRect.top - size.y, size.x * 3, size.y * 3 );
+			sf::FloatRect largeRect( pos.x - size.x, pos.y - size.y, size.x * 2, size.y * 2 );
 
 			for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); )
 			{
@@ -345,6 +352,10 @@ void Squad::DeactivateActor( TrueActor *actor )
 
 void Squad::Deactivate()
 {
+	for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+	{
+		(*it)->Kill();
+	}
 	activeActors.clear();
 	activated = false;
 	initialized = false;
