@@ -169,6 +169,22 @@ void Room::UpdateSquads( sf::Vector2f pos, sf::Vector2f size )
 	}
 }
 
+void Room::SquadsSaveState()
+{
+	for( list<Squad*>::iterator it = squads.begin(); it != squads.end(); ++it )
+	{
+		(*it)->SaveState();
+	}
+}
+
+void Room::SquadsLoadState()
+{
+	for( list<Squad*>::iterator it = squads.begin(); it != squads.end(); ++it )
+	{
+		(*it)->LoadState();
+	}
+}
+
 Squad::Squad( Stage *st, const string &name )
 	:name( name ), st( st ), initialized( false ), activated( false )
 {
@@ -298,7 +314,7 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 
 		if( !activeActors.empty() )
 		{
-			sf::FloatRect largeRect( pos.x - size.x, pos.y - size.y, size.x * 2, size.y * 2 );
+			sf::FloatRect largeRect( pos.x - size.x, pos.y - size.y * 1.5, size.x * 2, size.y * 3 );
 
 			for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); )
 			{
@@ -359,4 +375,28 @@ void Squad::Deactivate()
 	activeActors.clear();
 	activated = false;
 	initialized = false;
+}
+
+void Squad::SaveState()
+{
+	save_initialized = initialized;
+	save_activated = activated;
+
+	for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+	{
+		save_activeActors.push_back( (*it) );
+	}
+}
+
+void Squad::LoadState()
+{
+	initialized = save_initialized;
+	activated = save_activated;
+
+	activeActors.clear();
+	for( list<TrueActor*>::iterator it = save_activeActors.begin(); it != save_activeActors.end(); ++it )
+	{
+		activeActors.push_back( (*it) );
+	}
+	save_activeActors.clear();
 }

@@ -12,6 +12,7 @@
 
 struct TileSet
 {
+	TileSet();
 	sf::Texture *texture;
 	uint32 tileWidth;
 	uint32 tileHeight;

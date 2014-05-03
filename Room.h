@@ -27,6 +27,8 @@ struct Squad
 	void Deactivate();
 	Stage *st;
 	std::string name;
+	void SaveState();
+	void LoadState();
 
 	std::list<TrueActor*> save_activeActors;
 	bool save_initialized;
@@ -45,6 +47,8 @@ struct Room
 	std::list<Squad*> squads;
 	void UpdateSquads( sf::Vector2f pos, 
 		sf::Vector2f size );
+	void SquadsSaveState();
+	void SquadsLoadState();
 
 	std::map<std::string, b2Vec2> referencePoints;
 	std::map<std::string, b2Vec2> tempReferencePoints;

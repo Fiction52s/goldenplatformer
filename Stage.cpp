@@ -33,8 +33,19 @@ ObjectParams::ObjectParams( const sf::Vector2i &pos, uint32 localid, TileSet* ti
 
 }
 
+TileSet::TileSet()
+	:texture(NULL), imageSource( "-_-" )
+{
+
+}
+
 uint32 TileSet::TileCount()
 {
+	if( texture == NULL )
+	{
+		cout << "texture is null" << endl;
+	}
+
 	return texture->getSize().x / tileWidth * texture->getSize().y / tileHeight;
 }
 
@@ -132,14 +143,14 @@ void Camera::UpdateZoom()
 
 		if( zoom > maxZoom ) zoom = maxZoom;
 
-		//zoom = 2.5;
+		//zoom = 2;
 		//zoom = 2.5;
 	}
 	else
 	{
 	}
 
-	cout << "zoom: " << zoom << endl;
+	//cout << "zoom: " << zoom << endl;
 
 	//stage->SetCameraZoom( zoom );
 	//cout << "zoom : " << zoom << endl;
@@ -166,22 +177,22 @@ void Camera::UpdatePosition( Room * currentRoom )
 			maxOffset.y = 5 * zoom;
 			if( playerVel.x > 17 )
 			{
-				offset.x += offsetSpeed;
+				offset.x += offsetSpeed * zoom;
 			}
 			else if( playerVel.x < -17 )
 			{
-				offset.x -= offsetSpeed;
+				offset.x -= offsetSpeed * zoom;
 			}
 			else
 			{
 				if( offset.x > 0 )
 				{
-					offset.x -= offsetSpeed;
+					offset.x -= offsetSpeed * zoom;
 					if( offset.x < 0 ) offset.x = 0;
 				}
 				else if( offset.x < 0 )
 				{
-					offset.x += offsetSpeed;
+					offset.x += offsetSpeed * zoom;
 					if( offset.x > 0 ) offset.x = 0;
 				}
 
@@ -226,6 +237,9 @@ void Camera::UpdatePosition( Room * currentRoom )
 				viewPos.x = newLeft + camRect.width / 2.f;//((newLeft + camRect.width / 2.f) + viewPos.x ) / 100;//camRect.left + 5;
 				stage->view.setCenter( viewPos );
 				stage->mapView.setCenter( viewPos );
+				float blockOffset = viewPos.x * SF2BOX - playerPos.x;
+			//	if( offset.x < blockOffset )
+			//		offset.x = blockOffset;
 				//cout << "left adjust" << endl;
 			}
 			if( newRight >= 0 )
@@ -233,6 +247,10 @@ void Camera::UpdatePosition( Room * currentRoom )
 				viewPos.x = newRight - camRect.width / 2.f;//((newRight - camRect.width / 2.f) + viewPos.x ) / 2;
 				stage->view.setCenter( viewPos );
 				stage->mapView.setCenter( viewPos );
+				float blockOffset = viewPos.x * SF2BOX - playerPos.x;
+			//	if( offset.x > blockOffset )
+			//		offset.x = blockOffset;
+				//offset.x = 0;
 				//cout << "right adjust" << endl;
 			}
 
@@ -262,7 +280,7 @@ void Camera::UpdatePosition( Room * currentRoom )
 			//viewPos.y += ( (int32)viewPos.y % 64 );
 			//stage->view.setCenter( viewPos );
 
-
+			//cout << "zoom: " << zoom << ", offset: " << offset.x << endl;
 			pos.x = viewPos.x * SF2BOX;
 			pos.y = viewPos.y * SF2BOX;
 
@@ -618,6 +636,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 		}
 
 		//create the arra of tile sets which will be used by actors and tiles
+
 		tileSets = new TileSet*[tileSetMap.size()];
 		tileSetCount = tileSetMap.size();
 		int index = 0;
@@ -627,6 +646,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 			tileSets[index] = (*tileSetIt);
 		}
 
+		//cout << "Start layers!!!!" << endl;
 		
 
 		bool actorLayerYet = false;
@@ -716,6 +736,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 
 			if( boost::iequals( typeProperty, "image" ) )
 			{
+			//	cout << "starting image layer" << endl;
 				ImageLayer *layer = new ImageLayer;
 				layer->scrollRatio = scrollRatio;
 				layer->scrollx = scrollx;
@@ -772,15 +793,15 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 				}
 				else if( layerType == "objectgroup" ) //object layer
 				{
-					
+					//cout << "starting object processing" << endl;
 					while( node != NULL && string(node->name()) == "object" )
 					{
-						
+						//cout << "starting with an object" << endl;
 						attr = node->first_attribute();
 						uint32 id = boost::lexical_cast<int>( attr->value() );
 
 						TileSet *set = GlobalToLocal( id );
-						
+
 						attr = attr->next_attribute();
 						int xLoc = boost::lexical_cast<int>( attr->value() );
 						attr = attr->next_attribute();
@@ -792,7 +813,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						sf::Vector2i pos( xLoc, yLoc );
 						objectInfo.push_back( new ObjectParams( pos, id, set ) );
 
-
+						//cout << "done with an object" << endl;
 
 						//spr->setPosition( (int)spr->getPosition().x, (int)spr->getPosition().y );
 						//spr->setOrigin( (int)spr->getLocalBounds().width / 2.f, (int)spr->getLocalBounds().height / 2.f );
@@ -814,6 +835,9 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 
 
 				}
+
+//				cout << "general processing" << endl;
+
 				std::map<TileSet*, uint32> tilePerSetCount;
 				for( std::list<ObjectParams*>::iterator objectInfoIt = objectInfo.begin(); 
 					objectInfoIt != objectInfo.end(); ++objectInfoIt )
@@ -1420,7 +1444,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 								}
 							
 								node = node->parent();
-								//node = node->parent();
+								node = node->parent();
 							}
 
 							if( attr->next_attribute() == NULL )
@@ -1611,7 +1635,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 								}
 								else if( boost::iequals( attrName.substr(0, 4), "msg_" ) )
 								{
-									cout << "message interface----------------------" << endl;
+									//cout << "message interface----------------------" << endl;
 									string msg = attrName.substr( 4 );
 									
 									float tag = boost::lexical_cast<float>( attr->value() );
@@ -1706,6 +1730,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						}
 					}
 
+					cout << "squad map size: " << squadMap.size() << endl;
 					for( map<string, Squad*>::iterator it = squadMap.begin(); it != squadMap.end(); ++it )
 					{
 						room->squads.push_back( (*it).second );
@@ -1835,6 +1860,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 								
 						node = node->parent();
 
+						
 						if( node->next_sibling() != NULL 
 							&& string(node->next_sibling()->name()) == "object" )
 						{
@@ -1850,6 +1876,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 					node = node->parent();
 				}
 			}
+		//	cout << "done processing this layer" << endl;
 		}
 
 
@@ -2371,6 +2398,7 @@ void Stage::SetRoom( Room *room )
 //returns false when the game is over
 bool Stage::UpdatePrePhysics()
 {
+	
 	if( newRoom != NULL )
 	{
 		oldRoom = currentRoom;
@@ -2385,6 +2413,8 @@ bool Stage::UpdatePrePhysics()
 		
 		newRoom = NULL;
 	}
+
+	//cout << "squads: " << currentRoom->squads.size() << endl;
 
 
 	//changing from one room to the next
@@ -2536,7 +2566,10 @@ bool Stage::UpdatePrePhysics()
 					{
 						cloneKilledActors.push_back( a );
 						a->SetPause( true );
-						
+						for( uint32 i = 0; i < a->spriteCount; ++i )
+						{
+							a->SetSpriteEnabled( i, false );
+						}
 					}
 					else
 					{
@@ -2654,6 +2687,38 @@ bool Stage::UpdatePrePhysics()
 							//++rIt;
 						}
 					}*/
+
+					
+
+					for( uint32 i = 0; i < a->spriteCount; ++i )
+					{
+						int32 spritePriority = a->spritePriority[i];
+						if( spritePriority <= -1 && spritePriority >= -4 )
+						{
+							backLayers[spritePriority + 4].remove( pair<TrueActor*, uint32>( a, i ) );
+						}
+						else if( spritePriority == 0 )
+						{
+							actorLayer.remove( pair<TrueActor*, uint32>( a, i ) );
+						}
+						else if( spritePriority >= 1 && spritePriority <= 4 )
+						{
+							midLayers[spritePriority - 1].remove( pair<TrueActor*, uint32>( a, i ) );
+						}
+						else if( spritePriority >= 5 && spritePriority <= 8 )
+						{
+							frontLayers[spritePriority - 5 ].remove( pair<TrueActor*, uint32>( a, i ) );
+						}
+						else
+						{
+							assert( 0 );
+						}
+					}
+
+					if( a->squad != NULL )
+					{
+						a->squad->DeactivateActor( a );
+					}
 
 					//cloneKilledActors.push_back( a );
 					delete a;
@@ -2937,6 +3002,35 @@ bool Stage::Run()
 	{
 		//+ dealloacate the memory here later
 		texVertexMap[(*it)] = new sf::VertexArray( sf::Quads, viewHalfWidthTiles * 2 * viewHalfHeightTiles * 2 * 4 );//viewHalfWidthTiles * viewHalfHeightTiles * 4 );
+	}
+
+	std::map< sf::RenderTexture*, sf::VertexArray* > halftexVertexMap;
+	for( list<sf::Texture*>::iterator it = texs.begin(); it != texs.end(); ++it )
+	{
+		Texture * tex = (*it);
+		sf::RenderTexture *renderHalf = new sf::RenderTexture;
+		renderHalf->clear( sf::Color::Yellow );
+		renderHalf->create( tex->getSize().x / 2, tex->getSize().y / 2 );
+		//renderHalf->create( tex->getSize().x, tex->getSize().y );
+		sf::View halfView;
+		halfView.setSize( tex->getSize().x, tex->getSize().y );
+		//halfView.setCenter( 0,0);
+		//halfView.setCenter( renderHalf->getSize().x / 2, renderHalf->getSize().y / 2 );
+		//halfView.setCenter( tex->getSize().x /2, tex->getSize().y / 2 );
+		//renderHalf->setView( halfView );
+		sf::Sprite testSprite;
+		testSprite.setTexture( *tex );
+		testSprite.setScale( .5, .5 );
+		//testSprite.setScale( , -.5 );
+		//testSprite.setScale( .8,.8 );
+		//testSprite.setOrigin( testSprite.getLocalBounds().width / 2, testSprite.getLocalBounds().height / 2 );
+		//testSprite.setPosition( halfView.getCenter() );
+		renderHalf->draw( testSprite );
+		//renderHalf->setSmooth( true );
+		renderHalf->display();
+		
+
+		halftexVertexMap[renderHalf] = texVertexMap[(*it)];
 	}
 
 	
@@ -3790,6 +3884,9 @@ bool Stage::Run()
 		
 		if( cloneWorld )
 		{
+			//draw the frozen clone copies of actors from before the dimension split. clonekilledactors is the
+			//actors from before which have been killed in the alternate world.
+
 			for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 			{
 				(*it)->CloneDraw( &rt );
@@ -3875,18 +3972,29 @@ bool Stage::Run()
 					//map[tc + 3].position = sf::Vector2f((tx + 1) * tileSize -16, (ty + 0) * tileSize + 16); 
 
 					// define the texture coordinates of the 4 points of the current tile 
-					float blend = 1.f;//.5f;// 0.f;//-.5f;//0.5f;
-					if( c.zoom > 1.5 && c.zoom < 2 )
+					
+					float blend = 0.f;//.5f;// 0.f;//-.5f;//0.5f;
+					if( c.zoom  <= 1.7 )
 					{
+						//blend = 0.f;
+					}
+					else if( c.zoom <= 2.5 )
+					{
+						//blend = 1.f;
+						//blend = -.5;
+						if( c.zoom > 2 )
+						{
+							//blend = .125f;
+						}
 						tileSize = 32;
 						//cout << "tile size is 16" << endl;
 					}
-					else if( c.zoom > 2 )
-					{
-						tileSize = 16;
-					}
-					int ix = staticTileSets[tx][ty]->GetSubRect( staticLocalID[tx][ty] ).left / tileSize; // X index of the tile in the tileset 
-					int iy = staticTileSets[tx][ty]->GetSubRect( staticLocalID[tx][ty] ).top / tileSize; // Y index of the tile in the tileset ; 
+					//else if( c.zoom > 2 )
+					//{
+						//tileSize = 16;
+					//}
+					int ix = staticTileSets[tx][ty]->GetSubRect( staticLocalID[tx][ty] ).left * tileSize / 64.f / tileSize; // X index of the tile in the tileset 
+					int iy = staticTileSets[tx][ty]->GetSubRect( staticLocalID[tx][ty] ).top * tileSize / 64.f / tileSize; // Y index of the tile in the tileset ; 
 					map[tc+ 0].texCoords = sf::Vector2f((ix + 0) * tileSize + blend, (iy + 0) * tileSize + blend); 
 					map[tc+ 1].texCoords = sf::Vector2f((ix + 0) * tileSize + blend, (iy + 1) * tileSize - blend); 
 					map[tc+ 2].texCoords = sf::Vector2f((ix + 1) * tileSize - blend, (iy + 1) * tileSize - blend); 
@@ -3902,11 +4010,25 @@ bool Stage::Run()
 		//rt.setView( testv );
 		//drawing the map
 		statClock.restart();
-		for( std::map<sf::Texture*, sf::VertexArray*>::iterator mapIt = texVertexMap.begin(); 
-			mapIt != texVertexMap.end(); ++mapIt )
+		if( c.zoom <= 1.7 )
 		{
-			rt.draw( *(*mapIt).second, (*mapIt).first );
-			//window->draw( *(*mapIt).second, (*mapIt).first );
+			for( std::map<sf::Texture*, sf::VertexArray*>::iterator mapIt = texVertexMap.begin(); 
+				mapIt != texVertexMap.end(); ++mapIt )
+			{
+				rt.draw( *(*mapIt).second, (*mapIt).first );
+				//window->draw( *(*mapIt).second, (*mapIt).first );
+			}
+		}
+		else if( c.zoom <= 2.5 )
+		{
+			for( std::map<sf::RenderTexture*, sf::VertexArray*>::iterator mapIt = halftexVertexMap.begin(); 
+				mapIt != halftexVertexMap.end(); ++mapIt )
+			{
+				sf::Sprite s( (*mapIt).first->getTexture() );
+			
+				rt.draw( *(*mapIt).second, s.getTexture() );
+				//window->draw( *(*mapIt).second, (*mapIt).first );
+			}
 		}
 
 		//cout << "left: " << leftTile << ", right: " << rightTile << ", top: " << topTile << ", bottom: " << bottomTile << endl;
@@ -4188,12 +4310,18 @@ bool Stage::Run()
 			delete(*it);
 	}
 
+	for( map<sf::RenderTexture*, sf::VertexArray*>::iterator it = halftexVertexMap.begin(); it != halftexVertexMap.end(); ++it )
+	{
+		delete (*it).first;
+	}
+
 	for( list<sf::Texture*>::iterator it = texs.begin(); it != texs.end(); ++it )
 	{
 		delete texVertexMap[(*it)];
 		//+ dealloacate the memory here later
 		//texVertexMap[(*it)] = new sf::VertexArray( sf::Quads, viewHalfWidthTiles * 2 * viewHalfHeightTiles * 2 * 4 );//viewHalfWidthTiles * viewHalfHeightTiles * 4 );
 	}
+
 }
 
 void Stage::UpdateCamera()
@@ -4302,6 +4430,7 @@ void Stage::UpdatePostPhysics()
 
 		cloneWorldRevert = false;
 		RevertCloneWorld();
+		cout << "reverting" << endl;
 	}
 	else if( cloneWorld && !cloneWorldStart && cloneWorldCollapse )
 	{
@@ -4929,9 +5058,11 @@ TileSet * Stage::GlobalToLocal( uint32 &id )
 	if( id == 0 ) return NULL;
 
 	TileSet *ts = NULL;
+//	cout << "start loop" << endl;
 	for( int i = 0; i < tileSetCount; ++i )
 	{
 		int setFirstGID = tileSets[i]->firstGID;
+
 		if( setFirstGID + tileSets[i]->TileCount() > id && 
 			setFirstGID <= id )
 		{
@@ -5471,6 +5602,8 @@ void Stage::EnterCloneWorld()
 	}
 	save_prevInput = prevInput;
 
+	currentRoom->SquadsSaveState();
+
 	cloneCamera = c;
 }
 
@@ -5492,7 +5625,6 @@ void Stage::RevertCloneWorld()
 
 	for( list<TrueActor*>::iterator it = cloneKilledActors.begin(); it != cloneKilledActors.end(); ++it )
 	{
-		
 		activeActors.push_back( (*it) );
 	}
 	cloneKilledActors.clear();
@@ -5510,6 +5642,37 @@ void Stage::RevertCloneWorld()
 
 	for( list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end(); ++it )
 	{
+		if( (*it)->squad != NULL )
+		{
+			(*it)->squad->DeactivateActor( (*it ) );
+		}
+		
+		TrueActor *a = (*it);
+		for( uint32 i = 0; i < a->spriteCount; ++i )
+		{
+			int32 spritePriority = a->spritePriority[i];
+			if( spritePriority <= -1 && spritePriority >= -4 )
+			{
+				backLayers[spritePriority + 4].remove( pair<TrueActor*, uint32>( a, i ) );
+			}
+			else if( spritePriority == 0 )
+			{
+				actorLayer.remove( pair<TrueActor*, uint32>( a, i ) );
+			}
+			else if( spritePriority >= 1 && spritePriority <= 4 )
+			{
+				midLayers[spritePriority - 1].remove( pair<TrueActor*, uint32>( a, i ) );
+			}
+			else if( spritePriority >= 5 && spritePriority <= 8 )
+			{
+				frontLayers[spritePriority - 5 ].remove( pair<TrueActor*, uint32>( a, i ) );
+			}
+			else
+			{
+				assert( 0 );
+			}
+		}
+
 		delete (*it);
 	}
 	cloneActiveActors.clear();
@@ -5526,6 +5689,8 @@ void Stage::RevertCloneWorld()
 		collisions.push_back( (*it) );	
 	}
 	prevInput = save_prevInput;
+
+	currentRoom->SquadsLoadState();
 
 	c = cloneCamera;
 

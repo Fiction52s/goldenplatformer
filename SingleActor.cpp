@@ -363,7 +363,7 @@ bool SingleActor::ProcessCollisions()
 
 void SingleActor::UpdateSprites()
 {
-	//cout << "update sprites" << endl;
+	//cout << "update sprites for actor type: " << this->actorType << endl;
 	for( int i = 0; i < spriteCount; ++i )
 	{
 		float a = m_spriteAngle[i] / PI;
