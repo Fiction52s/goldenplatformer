@@ -1295,7 +1295,16 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						//^^read in angle from Tiled
 						//default to facing left and not being reversed
 						b2Vec2 aPos( ( x + ob.width/2.f ) * SF2BOX, ( y - ob.height/2.f ) * SF2BOX );
-						TrueActor * a = CreateActor( actorType, aPos, aVel, facingRight, reverse, angle, NULL );
+						TrueActor * a;
+						cout << "actor type: " << actorType << endl;
+						if( actorType == "treenode" )
+						{
+							a = CreateTreeNodeActor( aPos );
+						}
+						else
+						{ 
+							a = CreateActor( actorType, aPos, aVel, facingRight, reverse, angle, NULL );
+						}
 					//	cout << "creating actor of type: " << actorType << " at " << x << ", " << y << endl;
 						
 						squad->push_back( a );
@@ -1956,6 +1965,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 					else
 					{
 						chainShape.CreateChain( boxChainArray, boxChain.size() );
+					
 						bool prevSet = false;
 						bool nextSet = false;
 						//cout << "before: " << chainShape.m_hasPrevVertex << ", " << chainShape.m_hasNextVertex << endl;
@@ -2630,6 +2640,7 @@ bool Stage::UpdatePrePhysics()
 				//^^ this can't remain in the game (the timer)
 				if( (*it) != player )
 				{
+					//groups always updating because they do their pausing in-update
 					if( !(*it)->IsPaused() && !((*it)->isGroup) || (*it)->isGroup )
 					{
 					
@@ -4770,6 +4781,24 @@ GroupActor * Stage::CreateActorGroup( const std::string &type, uint32 actorCount
 {
 	GroupActor *a = new GroupActor( type, actorCount, pos, vel, facingRight, reverse, angle, parent, 
 		this );
+	assert( currentRoom != NULL );
+	a->room = currentRoom;
+	if( cloneWorld )
+	{
+		cloneAddedActors.push_back( a );
+	}
+	else
+	{
+		addedActors.push_back( a );
+	}
+	return a;
+}
+
+TreeNodeActor * Stage::CreateTreeNodeActor( b2Vec2 &pos )
+{
+	TreeNodeActor *a = new TreeNodeActor( pos, this );
+	assert( currentRoom != NULL );
+	a->room = currentRoom;
 	if( cloneWorld )
 	{
 		cloneAddedActors.push_back( a );
@@ -4971,7 +5000,7 @@ bool Stage::HandleCollision( b2Contact *contact )
 			 {
 			
 				tileY = tileY - 1;
-			
+		
 				if( staticTileSets[tileX][tileY] != NULL )
 				{
 					//if( !TileHandleCollision( staticTileSets[tileX][tileY]->collisionHandler, actor,

@@ -259,8 +259,16 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 			for( std::list<ActorDef*>::iterator it = actorDefs.begin(); it != actorDefs.end(); ++it )
 			{
 				ActorDef &ad = *(*it);
-				TrueActor *a = new SingleActor( ad.type, ad.pos, ad.vel, ad.facingRight, 
+				TrueActor *a;
+				if( ad.type == "treenode" )
+				{
+					a = new TreeNodeActor( ad.pos, st );
+				}
+				else
+				{
+					a = new SingleActor( ad.type, ad.pos, ad.vel, ad.facingRight, 
 					ad.reverse, ad.angle, ad.parent, st );
+				}
 				a->squad = ad.squad;
 				//^^not sure if i should keep this here but it makes things a lot easier.
 				if( st->cloneWorld )

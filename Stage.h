@@ -95,6 +95,8 @@ struct Camera
 	uint32 slowCounter;
 };
 
+
+struct TreeNodeActor ;
 class Stage
 {
 public:
@@ -187,7 +189,9 @@ public:
 		b2Vec2 &pos, b2Vec2 &vel, bool facingRight, 
 		bool reverse, float32 angle, TrueActor *parent );
 	BulletActor * CreateBulletGroup( uint32 actorCount, b2Vec2 &pos, b2Vec2 &vel, TrueActor *parent );
+	TreeNodeActor * CreateTreeNodeActor(  b2Vec2 &pos );
 	TrueActor *GetActor( const std::string &type );
+
 	void DebugDraw( sf::RenderTarget *rt );
 	bool Run();
 	sf::RenderWindow *window;

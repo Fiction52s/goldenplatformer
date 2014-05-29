@@ -789,7 +789,7 @@ struct GroupActor : public TrueActor
 
 	virtual void CloneDraw( sf::RenderTarget *target );
 
-	void UpdateSprites();
+	virtual void UpdateSprites();
 
 	void SetBodyAngle( float angle );
 
@@ -929,6 +929,17 @@ struct TentacleActor : public GroupActor
 		uint32 p_actorCount,
 		const b2Vec2 &pos, const b2Vec2 &vel,
 		TrueActor *parent, Stage *st );
+};
+
+struct TreeNodeActor : public GroupActor
+{
+	TreeNodeActor( const b2Vec2 &pos, Stage *st );
+	//void UpdateSprites();
+	float32 growthSpeed;
+	const static float32 MAX_NODES;
+	float32 minBranch;
+	float32 maxBranch;
+
 };
 
 #endif
