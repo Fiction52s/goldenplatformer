@@ -259,7 +259,7 @@ PlayerGhost::PlayerGhost( Stage *stage, PlayerChar *player )
 	d.angle = 0;
 	d.fixedRotation = true;
 	//d.position = stage->player->GetPosition();
-	body = stage->world->CreateBody( &d );
+	body = stage->world->CreateBody( &d	);
 	body->SetUserData( player );
 }
 

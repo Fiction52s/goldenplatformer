@@ -507,6 +507,37 @@ struct TrueActor : public b2RayCastCallback //change this later
 	virtual void LoadState();
 };
 
+/*struct ActorBody
+{
+	void CreateBox( uint32 tag, int layer, 
+		float32 offsetX, float32 offsetY, 
+		float32 width, float32 height, 
+		float32 angle );
+	void CreateCircle( uint32 tag, int layer, 
+		float32 offsetX, float32 offsetY, 
+		float32 radius );
+	void SetVelocity( float x, float y );
+	const b2Vec2 &GetVelocity();	
+	void SetPosition( float x, float y );
+	const b2Vec2 &GetPosition();
+	void SetAngle();
+	float GetAngle();
+	void SetAngularVelocity();
+	void ClearFixtures( int layer );
+	void ClearAllFixtures();
+	void SaveState();
+	void LoadState();
+	void SetFriction();
+	float GetFriction();
+	void SetRestitution();
+	float GetResitution();
+
+	float m_friction;
+	float m_restitution;
+
+
+};*/
+
 struct SingleActor : public TrueActor
 {
 	sf::Sprite **sprite;
@@ -683,6 +714,13 @@ struct PlayerGhost
 	uint32 hitlagFrames;
 };
 
+/*struct NewActor : public TrueActor
+{
+	NewActor( const b2Vec2 &pos, const b2Vec2 &vel,
+		bool facingRight, bool reverse, float32 angle,
+		TrueActor *parent, Stage *st );
+
+}*/
 
 struct PlayerChar: public SingleActor
 {

@@ -179,7 +179,7 @@ public:
 	//	float32 posX, float32 posy, float32 velX,
 	//	float32 velY, bool facingRight, bool reverse,
 	//	float32 angle, Actor *parent );
-	SingleActor * CreateActor( const std::string &type,
+	GroupActor * CreateActor( const std::string &type,
 		b2Vec2 &pos, b2Vec2 &vel, bool facingRight, 
 		bool reverse, float32 angle, TrueActor *parent );
 	GroupActor * CreateActorGroup( const std::string &type,

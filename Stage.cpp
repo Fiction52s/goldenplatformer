@@ -4727,7 +4727,7 @@ void Stage::DebugDraw( sf::RenderTarget *rt )
 
 
 
-SingleActor * Stage::CreateActor( const std::string &type, b2Vec2 &pos, b2Vec2 &vel, bool facingRight, bool reverse,
+GroupActor * Stage::CreateActor( const std::string &type, b2Vec2 &pos, b2Vec2 &vel, bool facingRight, bool reverse,
 	float32 angle, TrueActor *parent )
 //void Stage::CreateActor( const std::string &type, float32 posX, float32 posY, float32 velX, float32 velY, 
 //	bool facingRight, bool reverse, float32 angle, Actor *parent )
