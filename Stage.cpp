@@ -4649,6 +4649,10 @@ void Stage::DebugDraw( sf::RenderTarget *rt )
 			case( 1 << CollisionLayers::Tether ):
 				color = sf::Color::Black;
 				break;
+			case( 1 << CollisionLayers::TetherShot ):
+				color = sf::Color::Magenta;
+				break;
+
 			case ( 1 << CollisionLayers::Environment ):
 				if( debugDrawEnv )
 				{

@@ -28,8 +28,13 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 		bool facingRight, bool reverse, float32 angle,
 		TrueActor *parent, Stage *st )
 		:SingleActor( "player", pos, vel, facingRight, reverse, angle, parent, st ),
-		maxGhostCount( 8 ), ghostCount( 0 ),hitlagFrames( 0 ), tether( NULL )
+		maxGhostCount( 8 ), ghostCount( 0 ),hitlagFrames( 0 ), tether( NULL ), tetherShotBody( NULL )
 {
+	tetherHit = false;
+	tetherPoint = b2Vec2(0, 0 );
+
+	
+
 	ghosts = new PlayerGhost*[maxGhostCount];
 	for( int i = 0; i < maxGhostCount; ++i )
 	{
@@ -95,23 +100,86 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 	//lua_setglobal( L, "hitlagFrames" );
 }
 
+void PlayerChar::Init( b2World *world )
+{
+	SingleActor::Init( world );
+	tether = new Tether( stage,actorParams->body, world,
+		20 );
+}
+
 PlayerChar::~PlayerChar()
 {
+	
 }
 
 bool PlayerChar::UpdatePrePhysics()
 {
-	if( tether != NULL )
+	if( tetherShotBody != NULL && !tetherHit )
+	{
+		if( tether->CheckTetherShot( tetherShotBody ) )
+		{
+			tether->Reset();
+		}
+	}
+
+	if( tether->initialized )
 	{
 		tether->Update( this );
 	}
+	else if( tetherHit )
+	{
+		tetherHit = false;
+		
+		float x = tetherPoint.x - GetPosition().x;
+		float y = tetherPoint.y - GetPosition().y;
+		float distSqr = x * x + y * y;
+
+		CreateTether( tetherPoint.x, tetherPoint.y, sqrt( distSqr ) );
+	}
+
+	
 	return SingleActor::UpdatePrePhysics();
 
 }
 
-void PlayerChar::CreateTether()
+void PlayerChar::CreateTether( float posX, float posY, float maxLength, bool first )
 {
-	tether = new Tether( stage,actorParams->body, GetPosition(), world );
+	b2Vec2 pos( posX, posY );
+	tether->SetMaxLength( maxLength );
+	tether->Init( pos );
+	world->DestroyBody( tetherShotBody );
+	tetherShotBody = NULL;
+	//tether->SetMaxLength( 10 );
+}
+
+void PlayerChar::ReleaseTether()
+{
+	//delete tether;
+	//tether = NULL;
+}
+
+void PlayerChar::TetherShot(float velx, float vely)
+{
+	b2BodyDef def;
+	def.type = b2_dynamicBody;
+	def.position = GetPosition();
+	def.linearVelocity = b2Vec2( velx, vely );
+	def.fixedRotation = true;
+	def.bullet = true;
+
+	b2CircleShape cs;
+	cs.m_radius = .1;
+
+	b2FixtureDef fd;
+	fd.shape = &cs;
+	CollisionLayers::SetupFixture( CollisionLayers::TetherShot, fd.filter.categoryBits, fd.filter.maskBits );
+
+	tetherShotBody = world->CreateBody( &def );
+	tetherShotBody->CreateFixture( &fd );
+
+	
+
+	//tetherPoint = b2Vec2( velx, vely );
 }
 
 void PlayerChar::SetGhostHitlag( uint32 index, uint32 hitlagFrames )
@@ -144,6 +212,19 @@ void PlayerChar::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 				//ghost.sprites.pop_front();
 			}
 			
+		}
+
+		if( tetherShotBody != NULL )
+		{
+			sf::Vertex line [] = 
+			{
+				sf::Vertex( sf::Vector2f( tetherShotBody->GetPosition().x * BOX2SF, 
+				tetherShotBody->GetPosition().y * BOX2SF ), sf::Color::Magenta ),
+				sf::Vertex( sf::Vector2f( GetPosition().x * BOX2SF, 
+				GetPosition().y * BOX2SF ), sf::Color::Magenta )
+			};
+
+			target->draw( line, 2, sf::Lines );
 		}
 
 		if( tether != NULL )
@@ -345,6 +426,8 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addFunction( "GetCarryVelocity", &PlayerChar::GetCarryVelocity )
 				.addFunction( "SetGhostHitlag", &PlayerChar::SetGhostHitlag )
 				.addFunction( "CreateTether", &PlayerChar::CreateTether )
+				.addFunction( "TetherShot", &PlayerChar::TetherShot )
+				.addFunction( "ReleaseTether", &PlayerChar::ReleaseTether )
 				.addData( "hitlagFrames", &PlayerChar::hitlagFrames )
 			.endClass()
 			//.deriveClass<TreeNodeActor, GroupActor>("TreeNodeChar")

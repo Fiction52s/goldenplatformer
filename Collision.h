@@ -25,6 +25,7 @@ namespace CollisionLayers
 		PlayerEventCollisionbox,
 		Tether,
 		TetherTest,
+		TetherShot,
 		Door
 	};
 	void SetupFixture(CollisionLayers::Layer layer ,

@@ -23,6 +23,7 @@ void CollisionLayers::SetupFixture(CollisionLayers::Layer layer, uint16 &categor
 		case Environment:
 			maskBits |= 1 << PlayerPhysicsbox;
 			maskBits |= 1 << EnemyPhysicsbox;
+			maskBits |= 1 << TetherShot;
 			//maskBits |= 1 << Tether;
 			break;
 		case PlayerHitbox:
@@ -80,6 +81,9 @@ void CollisionLayers::SetupFixture(CollisionLayers::Layer layer, uint16 &categor
 		case Tether:
 			//maskBits |= 1 << Environment;
 			cout << "tether" << endl;
+			break;
+		case TetherShot:
+			maskBits |= 1 << Environment;
 			break;
 		default:
 			cout << "error" << endl;
@@ -283,7 +287,49 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 	uint16 aLayer = a->GetFilterData().categoryBits;
 	uint16 bLayer = b->GetFilterData().categoryBits;
 	
-	if( aLayer == ( 1 << CollisionLayers::Tether ) || bLayer == ( 1 << CollisionLayers::Tether ) )
+	if( aLayer == ( 1 << CollisionLayers::TetherShot ) || bLayer == ( 1 << CollisionLayers::TetherShot ) )
+	{
+
+		int numPoints = contact->GetManifold()->pointCount;
+
+		b2WorldManifold worldManifold;
+		contact->GetWorldManifold( &worldManifold );
+		
+		PlayerChar *player = stage->player;
+
+		b2Vec2 furthestPoint( worldManifold.points[0].x, worldManifold.points[0].y );
+		if( numPoints > 1 )
+		{
+			float x = furthestPoint.x - player->GetPosition().x;
+			float y = furthestPoint.y - player->GetPosition().y;
+			float distSqr = x * x + y * y;
+
+			float x2 = worldManifold.points[1].x - player->GetPosition().x;
+			float y2 = worldManifold.points[1].y - player->GetPosition().y;
+			float distSqr2 = x2 * x2 + y2 * y2;
+
+			if( distSqr2 > distSqr )
+			{
+				furthestPoint = worldManifold.points[1];
+			}
+		}
+
+		
+
+
+		//player->CreateTether( furthestPoint.x, furthestPoint.y, sqrt( distSqr ) );
+		player->tetherHit = true;
+		player->tetherPoint = furthestPoint;
+
+		if( aLayer == ( 1 << CollisionLayers::TetherShot ) )
+		{
+			//stage->player->CreateTether( 
+		}
+		else
+		{
+		}
+	}
+	else if( aLayer == ( 1 << CollisionLayers::Tether ) || bLayer == ( 1 << CollisionLayers::Tether ) )
 	{
 		contact->SetEnabled( true );
 		b2Vec2 tilePos;

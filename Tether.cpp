@@ -3,11 +3,12 @@
 
 using namespace std;
 
-Tether::Tether( Stage *st, b2Body *playerBody, b2Vec2 pos, b2World *world )
-	:st( st )
+Tether::Tether( Stage *st, b2Body *playerBody, b2World *world, float maxLength )
+	:st( st ), maxLen( maxLength ), checking( false ), playerBody( playerBody ), world( world ), 
+	initialized( false )
 {
-	anchorPoints.push_back( pos );
-
+	maxLen = 10;
+	//maxLen = 10;
 	
 	//b2RopeJoint *rj = (b2RopeJoint*)world->CreateJoint( &rjd );
 
@@ -27,25 +28,7 @@ Tether::Tether( Stage *st, b2Body *playerBody, b2Vec2 pos, b2World *world )
 	b2PolygonShape shape;
 	shape.SetAsBox( .1, 3, b2Vec2(0,3), 0 );*/
 
-	b2FixtureDef d;
-	d.density = 5;
-	d.friction = .3;
-	d.restitution = 0;
-	//d.shape = &shape;
-	CollisionLayers::SetupFixture( CollisionLayers::Tether, d.filter.categoryBits,
-		d.filter.maskBits );
-
-	b2BodyDef groundDef;
-	groundDef.position = pos;
-	//groundDef.position.y -= 6;
-	anchorBody = world->CreateBody( &groundDef );
-
-	b2RopeJointDef rjd;
-	rjd.maxLength = 6;
-	rjd.bodyA = playerBody;
-	rjd.bodyB = anchorBody;
-	rjd.localAnchorA.Set( 1, 0 );
-	b2RopeJoint *rj = (b2RopeJoint*)world->CreateJoint( &rjd );
+	
 
 /*	b2BodyDef bd;
 	bd.type = b2_dynamicBody;
@@ -189,9 +172,44 @@ Tether::Tether( Stage *st, b2Body *playerBody, b2Vec2 pos, b2World *world )
 
 }
 
-void Tether::Init()
+Tether::~Tether()
 {
+	
+}
 
+void Tether::Init( b2Vec2 pos )
+{
+	initialized = true;
+	anchorPoints.push_back( pos );
+
+	b2FixtureDef d;
+	d.density = 5;
+	d.friction = .3;
+	d.restitution = 0;
+	//d.shape = &shape;
+	CollisionLayers::SetupFixture( CollisionLayers::Tether, d.filter.categoryBits,
+		d.filter.maskBits );
+
+	b2BodyDef groundDef;
+	groundDef.position = pos;
+	//groundDef.position.y -= 6;
+	anchorBody = world->CreateBody( &groundDef );
+
+	b2RopeJointDef rjd;
+	rjd.maxLength = maxLen;
+	rjd.bodyA = playerBody;
+	rjd.bodyB = anchorBody;
+	rjd.localAnchorA.Set( 1, 0 );
+	b2RopeJoint *rj = (b2RopeJoint*)world->CreateJoint( &rjd );
+}
+
+bool Tether::CheckTetherShot( b2Body *shotBody )
+{
+	something2 = false;
+	checking = true;
+	st->world->RayCast( this, shotBody->GetPosition(), st->player->GetPosition() );
+	checking = false;
+	return something2;
 }
 
 void Tether::Update( PlayerChar *player )
@@ -275,9 +293,9 @@ void Tether::Update( PlayerChar *player )
 		float xx = anchorPoints.back().x - closest.x;
 		float yy = anchorPoints.back().y - closest.y;
 
-		if( totalDist < 6 )
+		if( totalDist < maxLen )
 		{
-			rj->SetMaxLength( 6 - totalDist );
+			rj->SetMaxLength( maxLen - totalDist );
 		}
 		else
 		{
@@ -348,20 +366,38 @@ void Tether::Update( PlayerChar *player )
 		//second from the last
 		something = false;
 		world->RayCast( this, (*rIt), player->GetPosition() );	
+		b2Vec2 blah( player->GetPosition().x - anchorPoints.back().x, player->GetPosition().y - anchorPoints.back().y );
+		for( int b = 1; b < 5; ++b )
+		{
+			float b2 = (float)b / 5;
+			b2Vec2 bbb( blah );
+			bbb.x *= b2;
+			bbb.y *= b2;
+			world->RayCast( this, (*rIt), anchorPoints.back() + bbb );
+			//cout << "start: " << (*rIt).x << ", " << (*rIt).y << endl;
+			b2Vec2 xx(anchorPoints.back() +bbb);
+			//cout << "end: " << xx.x << ", " << xx.y << endl;
+		}
 
 
 
-		cout << "checking raycast starting at: " << (*rIt).x << ", " << (*rIt).y << " and going to " 
-			<< player->GetPosition().x << ", " << player->GetPosition().y << endl;
+		//cout << "checking raycast starting at: " << (*rIt).x << ", " << (*rIt).y << " and going to " 
+		//	<< player->GetPosition().x << ", " << player->GetPosition().y << endl;
 
-		float lineAvx = player->GetPosition().x - anchorPoints.back().x;
+		/*float lineAvx = player->GetPosition().x - anchorPoints.back().x;
 		float lineAvy = player->GetPosition().y - anchorPoints.back().y;
+		b2Vec2 line1( lineAvx, lineAvy );
+		line1.Normalize();
+		
 
-		float lineBvx =  anchorPoints.back().x - (*rIt).x;
-		float lineBvy = anchorPoints.back().y - (*rIt).y;
+		float lineBvx = anchorPoints.back().x - (*rIt).x;
+		float lineBvy = anchorPoints.back().y - (*rIt).y; 
+		b2Vec2 line2( lineBvx, lineBvy );
+		line2.Normalize();
 
-		float dot = lineAvx * lineBvx + lineAvy * lineBvy;
-		cout << "dot: " << dot << endl;
+		//float dot = lineAvx * lineBvx + lineAvy * lineBvy;
+		float dot = line1.x * line2.x + line1.y * line2.y;
+		cout << "dot: " << dot << endl;*/
 		if( !something )
 		{
 			cout << "joining" << endl;
@@ -388,9 +424,9 @@ void Tether::Update( PlayerChar *player )
 			float xx = anchorPoints.back().x - closest.x;
 			float yy = anchorPoints.back().y - closest.y;
 
-			if( totalDist < 6 )
+			if( totalDist < maxLen )
 			{
-				rj->SetMaxLength( 6 - totalDist );
+				rj->SetMaxLength( maxLen - totalDist );
 			}
 			else
 			{
@@ -481,6 +517,22 @@ void Tether::Split( PlayerChar* player, b2Vec2 splitPoint )
 	r2->EnableMotor( true );*/
 }
 
+void Tether::Reset()
+{
+	if( initialized )
+	{
+		st->world->DestroyJoint( anchorBody->GetJointList()->joint );
+		st->world->DestroyBody( anchorBody );
+		initialized = false;
+	}
+}
+
+
+void Tether::SetMaxLength( float max )
+{
+	maxLen = max;
+}
+
 float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction)
 {
 	//^^temporary. need to filter out anything not environment most of the time. how do i do this from params?
@@ -495,6 +547,13 @@ float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2V
 	{
 		return 1;
 	}
+
+	if( checking )
+	{
+		something2 = true;
+		return 0;	
+	}
+
 
 	if( splitting )
 	{
@@ -558,7 +617,7 @@ float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2V
 	}
 	else if( fixture->GetFilterData().categoryBits == 1 << CollisionLayers::Environment )
 	{
-		//cout << "ran into something" << endl;
+	//	cout << "ran into something" << endl;
 		something = true;
 	}
 	
