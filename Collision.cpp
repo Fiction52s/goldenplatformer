@@ -23,6 +23,7 @@ void CollisionLayers::SetupFixture(CollisionLayers::Layer layer, uint16 &categor
 		case Environment:
 			maskBits |= 1 << PlayerPhysicsbox;
 			maskBits |= 1 << EnemyPhysicsbox;
+			//maskBits |= 1 << Tether;
 			break;
 		case PlayerHitbox:
 			maskBits |= 1 << EnemyHurtbox;
@@ -75,6 +76,10 @@ void CollisionLayers::SetupFixture(CollisionLayers::Layer layer, uint16 &categor
 		case Door:
 			maskBits |= 1 << PlayerEventCollisionbox;
 			maskBits |= 1 << EnemyPhysicsbox;
+			break;
+		case Tether:
+			//maskBits |= 1 << Environment;
+			cout << "tether" << endl;
 			break;
 		default:
 			cout << "error" << endl;
@@ -278,7 +283,57 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 	uint16 aLayer = a->GetFilterData().categoryBits;
 	uint16 bLayer = b->GetFilterData().categoryBits;
 	
-	if( aLayer == ( 1 << CollisionLayers::Environment ) || bLayer == ( 1 << CollisionLayers::Environment ) )
+	if( aLayer == ( 1 << CollisionLayers::Tether ) || bLayer == ( 1 << CollisionLayers::Tether ) )
+	{
+		contact->SetEnabled( true );
+		b2Vec2 tilePos;
+		if( aLayer == ( 1 << CollisionLayers::Tether ) )
+		{
+			//b->GetShape()->
+			b2Vec2 *tempVec= (b2Vec2*)(b->GetUserData());
+			tilePos.x = tempVec->x;
+			tilePos.y = tempVec->y;
+
+			b2ChainShape *cs = (b2ChainShape*)b->GetShape();
+			cout << "count: " << cs->m_count << endl;
+			cout << "first: " << cs->m_vertices[0].x << ", " << cs->m_vertices[0].y << endl;
+			cout << "second: " << cs->m_vertices[1].x << ", " << cs->m_vertices[1].y << endl;
+			cout << "prev vert: " << cs->m_prevVertex.x << ", " << cs->m_prevVertex.y << endl;
+			cout << "next vert: " << cs->m_nextVertex.x << ", " << cs->m_nextVertex.y << endl;
+			
+			//stage->tetherCollisions.push_back( list<b2Vec2>() );
+			for( int i = 0; i < cs->m_count; ++i )
+			{
+				//stage->tetherCollisions.back().push_back( cs->m_vertices[i] );
+				stage->tetherCollisions.push_back( cs->m_vertices[i] );
+			}
+		}
+		else
+		{
+			b2Vec2 *tempVec= (b2Vec2*)(a->GetUserData());
+			tilePos.x = tempVec->x;
+			tilePos.y = tempVec->y;
+
+			b2ChainShape *cs = (b2ChainShape*)a->GetShape();
+			cout << "count: " << cs->m_count << endl;
+			cout << "first: " << cs->m_vertices[0].x << ", " << cs->m_vertices[0].y << endl;
+			cout << "second: " << cs->m_vertices[1].x << ", " << cs->m_vertices[1].y << endl;
+			cout << "prev vert: " << cs->m_prevVertex.x << ", " << cs->m_prevVertex.y << endl;
+			cout << "next vert: " << cs->m_nextVertex.x << ", " << cs->m_nextVertex.y << endl;
+			//blayer is tether
+
+			//stage->tetherCollisions.push_back( list<b2Vec2>() );
+			for( int i = 0; i < cs->m_count; ++i )
+			{
+				stage->tetherCollisions.push_back( cs->m_vertices[i] );
+			}
+
+		}
+
+		//cout << "tile pos: " << tilePos.x << ", " << tilePos.y << endl;
+		//stage->staticTileSets[tilePos.x][tilePos.y]
+	}
+	else if( aLayer == ( 1 << CollisionLayers::Environment ) || bLayer == ( 1 << CollisionLayers::Environment ) )
 	{
 		bool contactEnabled =  stage->HandleCollision( contact );
 		contact->SetEnabled( contactEnabled );

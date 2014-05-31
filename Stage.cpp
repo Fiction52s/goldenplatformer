@@ -12,6 +12,7 @@
 #include <SFML/Window/Keyboard.hpp>
 #include <boost/algorithm/string.hpp>
 #include "Room.h"
+#include "Tether.h"
 
 
 using namespace std;
@@ -37,6 +38,11 @@ TileSet::TileSet()
 	:texture(NULL), imageSource( "-_-" )
 {
 
+}
+
+TileSet::~TileSet()
+{
+	delete [] tileChains;
 }
 
 uint32 TileSet::TileCount()
@@ -627,6 +633,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 			
 			TileSet* ts = LoadTileSet( dir, tileSetFileName, firstGID, tileSetChains, actorTiles );
 			tileSetMap[ts] = tileSetChains;
+			ts->tileChains = tileSetChains;
 			tileSetList.push_back( ts );
 
 			if( string(node->next_sibling()->name()) == "tileset" )
@@ -1993,7 +2000,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 		for( map< TileSet*, list< list< b2Vec2 > >* >::iterator tileSetMapIt = tileSetMap.begin(); 
 			tileSetMapIt != tileSetMap.end(); ++tileSetMapIt )
 		{
-			delete [] (*tileSetMapIt).second;
+			//delete [] (*tileSetMapIt).second;
 
 			//new list<list<b2Vec2>>[tileCount]
 		}
@@ -4332,6 +4339,40 @@ void Stage::UpdateCamera()
 void Stage::UpdatePostPhysics()
 {
 	
+	if( !tetherCollisions.empty() )
+	{
+		b2Vec2 closestPoint = tetherCollisions.front();
+		tetherCollisions.pop_front();
+
+		while( !tetherCollisions.empty() )
+		{
+			//float xDiff = player->tether->anchorBody->GetPosition().x - closestPoint.x;
+			float xDiff = player->GetPosition().x - closestPoint.x;
+			float yDiff = player->GetPosition().y - closestPoint.y;
+			//float yDiff = player->tether->anchorBody->GetPosition().y - closestPoint.y;
+			float dSqr = xDiff * xDiff + yDiff * yDiff;
+			
+
+			//float xDiff2 = player->tether->anchorBody->GetPosition().x - tetherCollisions.front().x;
+			//float yDiff2 = player->tether->anchorBody->GetPosition().y - tetherCollisions.front().y;
+			float xDiff2 = player->GetPosition().x - tetherCollisions.front().x;
+			float yDiff2 = player->GetPosition().y - tetherCollisions.front().y;
+			float dSqr2 = xDiff2 * xDiff2 + yDiff2 * yDiff2;
+
+			if( dSqr2 < dSqr )
+			{
+				closestPoint = tetherCollisions.front();
+			}
+
+			tetherCollisions.pop_front();
+		}
+
+		player->tether->Split( player, closestPoint );
+		
+		//tetherCollisions.clear();	
+	}
+	
+
 
 	for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 	{
@@ -4605,12 +4646,16 @@ void Stage::DebugDraw( sf::RenderTarget *rt )
 			case( 1 << CollisionLayers::Door ):
 				color = sf::Color::White;
 				break;
+			case( 1 << CollisionLayers::Tether ):
+				color = sf::Color::Black;
+				break;
 			case ( 1 << CollisionLayers::Environment ):
 				if( debugDrawEnv )
 				{
 					//color = sf::Color::White;
 					break;
 				}
+			
 			default:
 				fixtures = fixtures->GetNext();
 				continue;
@@ -4727,7 +4772,7 @@ void Stage::DebugDraw( sf::RenderTarget *rt )
 
 
 
-GroupActor * Stage::CreateActor( const std::string &type, b2Vec2 &pos, b2Vec2 &vel, bool facingRight, bool reverse,
+SingleActor * Stage::CreateActor( const std::string &type, b2Vec2 &pos, b2Vec2 &vel, bool facingRight, bool reverse,
 	float32 angle, TrueActor *parent )
 //void Stage::CreateActor( const std::string &type, float32 posX, float32 posY, float32 velX, float32 velY, 
 //	bool facingRight, bool reverse, float32 angle, Actor *parent )

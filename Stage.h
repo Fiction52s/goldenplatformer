@@ -13,6 +13,7 @@
 struct TileSet
 {
 	TileSet();
+	~TileSet();
 	sf::Texture *texture;
 	uint32 tileWidth;
 	uint32 tileHeight;
@@ -22,6 +23,7 @@ struct TileSet
 	sf::IntRect GetSubRect( uint32 localID );
 	std::string imageSource;
 	std::string collisionHandler;
+	std::list<std::list<b2Vec2>>* tileChains;
 };
 
 
@@ -179,7 +181,7 @@ public:
 	//	float32 posX, float32 posy, float32 velX,
 	//	float32 velY, bool facingRight, bool reverse,
 	//	float32 angle, Actor *parent );
-	GroupActor * CreateActor( const std::string &type,
+	SingleActor * CreateActor( const std::string &type,
 		b2Vec2 &pos, b2Vec2 &vel, bool facingRight, 
 		bool reverse, float32 angle, TrueActor *parent );
 	GroupActor * CreateActorGroup( const std::string &type,
@@ -215,6 +217,10 @@ public:
 	std::list<TrueActor*> cloneKilledActors;
 
 	std::list<TrueActor*> activeActors;
+
+	std::list<b2Vec2> tetherCollisions;
+	//std::list<std::list<b2Vec2>> tetherCollisions;
+
 private:
 	TileSet * LoadTileSet( const std::string &dir,
 		const std::string &name, 

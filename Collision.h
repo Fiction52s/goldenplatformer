@@ -23,6 +23,8 @@ namespace CollisionLayers
 		ActorDetectionbox,
 		PlayerDetectionbox,
 		PlayerEventCollisionbox,
+		Tether,
+		TetherTest,
 		Door
 	};
 	void SetupFixture(CollisionLayers::Layer layer ,

@@ -2,6 +2,7 @@
 #include <iostream>
 #include "Action.h"
 #include <sstream>
+#include "Tether.h"
 
 using namespace sf;
 using namespace std;
@@ -27,7 +28,7 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 		bool facingRight, bool reverse, float32 angle,
 		TrueActor *parent, Stage *st )
 		:SingleActor( "player", pos, vel, facingRight, reverse, angle, parent, st ),
-		maxGhostCount( 8 ), ghostCount( 0 ),hitlagFrames( 0 )
+		maxGhostCount( 8 ), ghostCount( 0 ),hitlagFrames( 0 ), tether( NULL )
 {
 	ghosts = new PlayerGhost*[maxGhostCount];
 	for( int i = 0; i < maxGhostCount; ++i )
@@ -35,6 +36,7 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 		ghosts[i] = new PlayerGhost( st, this );
 	}
 
+	
 
 	ghostVisibility = 150;
 
@@ -97,6 +99,21 @@ PlayerChar::~PlayerChar()
 {
 }
 
+bool PlayerChar::UpdatePrePhysics()
+{
+	if( tether != NULL )
+	{
+		tether->Update( this );
+	}
+	return SingleActor::UpdatePrePhysics();
+
+}
+
+void PlayerChar::CreateTether()
+{
+	tether = new Tether( stage,actorParams->body, GetPosition(), world );
+}
+
 void PlayerChar::SetGhostHitlag( uint32 index, uint32 hitlagFrames )
 {
 	ghosts[index]->hitlagFrames = hitlagFrames;
@@ -127,6 +144,31 @@ void PlayerChar::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 				//ghost.sprites.pop_front();
 			}
 			
+		}
+
+		if( tether != NULL )
+		{
+			sf::Vertex *line = new sf::Vertex[1 + tether->anchorPoints.size()];// =
+			
+		
+			int itn = 0;
+			for( list<b2Vec2>::iterator it = tether->anchorPoints.begin(); it != tether->anchorPoints.end(); 
+				++it )
+			{
+				line[itn] = sf::Vertex(sf::Vector2f((*it).x * BOX2SF, (*it).y * BOX2SF), sf::Color::Black);
+				++itn;
+			}
+
+			line[itn] = sf::Vertex(sf::Vector2f(this->GetPosition().x * BOX2SF, this->GetPosition().y * BOX2SF), sf::Color::Black);
+			//cout << "drawing " << 1 + tether->anchorPoints.size() << endl;
+			
+
+			for( int t = 0; t < tether->anchorPoints.size(); ++t )
+			{
+				target->draw(line+t, 2, sf::Lines);
+			}
+
+			delete [] line;
 		}
 	}
 
@@ -302,13 +344,14 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addFunction( "SetCarryVelocity", &PlayerChar::SetCarryVelocity )
 				.addFunction( "GetCarryVelocity", &PlayerChar::GetCarryVelocity )
 				.addFunction( "SetGhostHitlag", &PlayerChar::SetGhostHitlag )
+				.addFunction( "CreateTether", &PlayerChar::CreateTether )
 				.addData( "hitlagFrames", &PlayerChar::hitlagFrames )
 			.endClass()
-			.deriveClass<TreeNodeActor, GroupActor>("TreeNodeChar")
-				.addData( "growthSpeed", &TreeNodeActor::growthSpeed )
-				.addData( "minBranch", &TreeNodeActor::minBranch )
-				.addData( "maxBranch", &TreeNodeActor::maxBranch )
-			.endClass()
+			//.deriveClass<TreeNodeActor, GroupActor>("TreeNodeChar")
+			//	.addData( "growthSpeed", &TreeNodeActor::growthSpeed )
+			//	.addData( "minBranch", &TreeNodeActor::minBranch )
+			//	.addData( "maxBranch", &TreeNodeActor::maxBranch )
+			//.endClass()
 			.beginClass<b2Vec2>( "b2Vec2" )
 				.addConstructor<void(*)(void)>()
 				.addFunction( "Normalize", &b2Vec2::Normalize )

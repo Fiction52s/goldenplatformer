@@ -598,7 +598,7 @@ struct SingleActor : public TrueActor
 	void SetSprite( uint32 spriteIndex,
 		uint32 tsIndex, uint32 localID );
 
-	bool UpdatePrePhysics();
+	virtual bool UpdatePrePhysics();
 
 	bool ProcessCollisions();
 
@@ -722,6 +722,7 @@ struct PlayerGhost
 
 }*/
 
+struct Tether;
 struct PlayerChar: public SingleActor
 {
 	PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
@@ -737,17 +738,22 @@ struct PlayerChar: public SingleActor
 		float32 width, float32 height, 
 		float32 angle );
 
+	bool UpdatePrePhysics();
+
 	virtual void CreateCircle( uint32 tag, int layer, 
 		float32 offsetX, float32 offsetY, 
 		float32 radius );
 	void SetGhostHitlag( uint32 index,
 		uint32 hitlagFrames );
+	void CreateTether();
 	//virtual void CloneDraw( sf::RenderTarget *target );
 	ControllerState currentInput;
 	ControllerState prevInput;
 	sf::Shader playerShader;
 	sf::Shader cloneShader;
 	b2Vec2 carryVel;
+
+	Tether * tether;
 
 	b2Vec2 save_carryVel;
 
