@@ -315,18 +315,37 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 		}
 
 		
+		
 
 
 		//player->CreateTether( furthestPoint.x, furthestPoint.y, sqrt( distSqr ) );
-		player->tetherHit = true;
-		player->tetherPoint = furthestPoint;
+//		player->tetherHit = true;
+//		player->tetherPoint = furthestPoint;
 
+		b2Body * body = NULL;
 		if( aLayer == ( 1 << CollisionLayers::TetherShot ) )
 		{
+			body = contact->GetFixtureA()->GetBody();
+
+			
 			//stage->player->CreateTether( 
 		}
 		else
 		{
+			body = contact->GetFixtureB()->GetBody();
+		}
+
+		assert( body != NULL );
+
+		if( body == player->leftTetherShotBody )
+		{
+			player->leftTetherHit = true;
+			player->leftTetherPoint = furthestPoint;
+		}
+		else
+		{
+			player->rightTetherHit = true;
+			player->rightTetherPoint = furthestPoint;
 		}
 	}
 	else if( aLayer == ( 1 << CollisionLayers::Tether ) || bLayer == ( 1 << CollisionLayers::Tether ) )

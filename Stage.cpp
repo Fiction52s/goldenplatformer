@@ -3202,7 +3202,7 @@ bool Stage::Run()
 				//currentInput.rightShoulder |= currentInput.rightTrigger > 10;
 				currentInput.Y = currentInput.Y;// || currentInput.leftShoulder;
 				//currentInput.leftShoulder = currentInput.leftTrigger > 10;
-				currentInput.B |= currentInput.rightTrigger > 10;
+				//currentInput.B |= currentInput.rightTrigger > 10;
 				
 				//bool temp = currentInput.X;
 				//currentInput.X = currentInput.leftShoulder;
@@ -4367,7 +4367,7 @@ void Stage::UpdatePostPhysics()
 			tetherCollisions.pop_front();
 		}
 
-		player->tether->Split( player, closestPoint );
+		//player->tether->Split( player, closestPoint );
 		
 		//tetherCollisions.clear();	
 	}

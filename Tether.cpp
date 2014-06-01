@@ -7,7 +7,7 @@ Tether::Tether( Stage *st, b2Body *playerBody, b2World *world, float maxLength )
 	:st( st ), maxLen( maxLength ), checking( false ), playerBody( playerBody ), world( world ), 
 	initialized( false )
 {
-	maxLen = 10;
+	maxLen = 30;
 	//maxLen = 10;
 	
 	//b2RopeJoint *rj = (b2RopeJoint*)world->CreateJoint( &rjd );
@@ -356,6 +356,24 @@ void Tether::Update( PlayerChar *player )
 	}
 
 
+	
+
+
+	//cout << "after ray cast" << endl;
+
+	
+
+	
+	
+
+
+	oldPlayerPos = player->GetPosition();
+
+
+}
+
+void Tether::Split( PlayerChar* player, b2Vec2 splitPoint )
+{
 	if( anchorPoints.size() > 1 )
 	{
 		
@@ -437,21 +455,6 @@ void Tether::Update( PlayerChar *player )
 	}
 
 
-	//cout << "after ray cast" << endl;
-
-	
-
-	
-	
-
-
-	oldPlayerPos = player->GetPosition();
-
-
-}
-
-void Tether::Split( PlayerChar* player, b2Vec2 splitPoint )
-{
 	/*cout << "split point: " << splitPoint.x << ", " << splitPoint.y << endl;
 	//splitPoint.y += 1;
 	anchor = splitPoint;
@@ -523,6 +526,7 @@ void Tether::Reset()
 	{
 		st->world->DestroyJoint( anchorBody->GetJointList()->joint );
 		st->world->DestroyBody( anchorBody );
+		anchorPoints.clear();
 		initialized = false;
 	}
 }
@@ -531,6 +535,8 @@ void Tether::Reset()
 void Tether::SetMaxLength( float max )
 {
 	maxLen = max;
+	b2RopeJoint* rj = (b2RopeJoint*)anchorBody->GetJointList()->joint;
+	rj->SetMaxLength( maxLen );
 }
 
 float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2Vec2& normal, float32 fraction)

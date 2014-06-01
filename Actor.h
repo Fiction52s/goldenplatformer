@@ -745,9 +745,10 @@ struct PlayerChar: public SingleActor
 		float32 radius );
 	void SetGhostHitlag( uint32 index,
 		uint32 hitlagFrames );
-	void CreateTether( float posX, float posY, float maxLength, bool first );
-	void ReleaseTether();
-	void TetherShot(float velx, float vely, bool first);
+	void CreateTether( float posX, float posY, float maxLength, bool left );
+	void ReleaseTether( bool left);
+	void MaxTetherLength( bool left );
+	void TetherShot(float velx, float vely, bool left);
 	//virtual void CloneDraw( sf::RenderTarget *target );
 	ControllerState currentInput;
 	ControllerState prevInput;
@@ -755,15 +756,19 @@ struct PlayerChar: public SingleActor
 	sf::Shader cloneShader;
 	b2Vec2 carryVel;
 
-	Tether * tether;
-	b2Body *tetherShotBody;
+	Tether * leftTether;
+	b2Body *leftTetherShotBody;
+	b2Vec2 leftTetherPoint;
+	bool LeftTetherActive();
 
-	Tether * tether2;
-	b2Body *tether2ShotBody;
-	bool tether2Hit;
+	Tether * rightTether;
+	b2Body *rightTetherShotBody;
+	bool rightTetherHit;
+	b2Vec2 rightTetherPoint;
+	bool RightTetherActive();
 
-	bool tetherHit;
-	b2Vec2 tetherPoint;
+	bool leftTetherHit;
+	
 	b2Vec2 tetherGoal;
 
 	b2Vec2 save_carryVel;
