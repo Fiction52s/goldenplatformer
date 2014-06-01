@@ -120,57 +120,34 @@ PlayerChar::~PlayerChar()
 
 bool PlayerChar::UpdatePrePhysics()
 {
-	if( leftTetherShotBody != NULL && !leftTetherHit )
-	{
-		if( leftTether->CheckTetherShot( leftTetherShotBody ) )
-		{
-			leftTether->Reset();
-		}
-	}
+	bool f = SingleActor::UpdatePrePhysics();
+	leftTether->Update( this );
+	rightTether->Update( this );
 
-	if( rightTetherShotBody != NULL && !rightTetherHit )
-	{
-		if( rightTether->CheckTetherShot( rightTetherShotBody ) )
-		{
-			rightTether->Reset();
-		}
-	}
+	return f;
+}
 
-	if( leftTether->initialized )
-	{
-		leftTether->Update( this );
-	}
-	else if( leftTetherHit )
-	{
-		leftTetherHit = false;
-		
-		float x = leftTetherPoint.x - GetPosition().x;
-		float y = leftTetherPoint.y - GetPosition().y;
-		float distSqr = x * x + y * y;
 
-		//CreateTether( leftTetherPoint.x, leftTetherPoint.y, sqrt( distSqr ), true );
-		CreateTether( leftTetherPoint.x, leftTetherPoint.y, 20, true );
-	}
+std::string PlayerChar::GetTetherState( bool left )
+{
+	Tether *t;
+	if( left )
+		t = leftTether;
+	else 
+		t = rightTether;
 
-	if( rightTether->initialized )
-	{
-		rightTether->Update( this );
-	}
-	else if( rightTetherHit )
-	{
-		rightTetherHit = false;
-		
-		float x = rightTetherPoint.x - GetPosition().x;
-		float y = rightTetherPoint.y - GetPosition().y;
-		float distSqr = x * x + y * y;
+	return t->GetState();
+}
 
-		//CreateTether( rightTetherPoint.x, rightTetherPoint.y, sqrt( distSqr ), false );
-		CreateTether( rightTetherPoint.x, rightTetherPoint.y, 20, false );
-	}
+void PlayerChar::LockTether( bool left )
+{
+	Tether *t;
+	if( left )
+		t = leftTether;
+	else
+		t = rightTether;
 
-	
-	return SingleActor::UpdatePrePhysics();
-
+	t->Lock( this );
 }
 
 void PlayerChar::MaxTetherLength( bool left )
@@ -221,14 +198,14 @@ void PlayerChar::CreateTether( float posX, float posY, float maxLength, bool lef
 	if( left )
 	{
 		leftTether->SetMaxLength( maxLength );
-		leftTether->Init( pos );
+	//	leftTether->Init( pos );
 		world->DestroyBody( leftTetherShotBody );
 		leftTetherShotBody = NULL;
 	}
 	else
 	{
 		rightTether->SetMaxLength( maxLength );
-		rightTether->Init( pos );
+	//	rightTether->Init( pos );
 		world->DestroyBody( rightTetherShotBody );
 		rightTetherShotBody = NULL;
 	}
@@ -250,19 +227,18 @@ void PlayerChar::ReleaseTether(bool left)
 	//tether = NULL;
 }
 
-bool PlayerChar::LeftTetherActive()
-{
-	return leftTether->initialized;
-}
-
-bool PlayerChar::RightTetherActive() 
-{
-	return rightTether->initialized;
-}
-
 void PlayerChar::TetherShot(float velx, float vely, bool left)
 {
-	b2BodyDef def;
+
+	Tether *t = NULL;
+	if( left )
+		t = leftTether;
+	else
+		t = rightTether;
+
+	t->Shot( this, b2Vec2( velx, vely ) );
+
+	/*b2BodyDef def;
 	def.type = b2_dynamicBody;
 	def.position = GetPosition();
 	def.linearVelocity = b2Vec2( velx, vely );
@@ -285,7 +261,7 @@ void PlayerChar::TetherShot(float velx, float vely, bool left)
 	{
 		rightTetherShotBody = world->CreateBody( &def );
 		rightTetherShotBody->CreateFixture( &fd );
-	}
+	}*/
 	
 
 	
@@ -325,12 +301,14 @@ void PlayerChar::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 			
 		}
 
-		if( leftTetherShotBody != NULL )
+		string leftState = leftTether->GetState();
+		string rightState = rightTether->GetState();
+		if( leftState == "shot" )
 		{
 			sf::Vertex line [] = 
 			{
-				sf::Vertex( sf::Vector2f( leftTetherShotBody->GetPosition().x * BOX2SF, 
-				leftTetherShotBody->GetPosition().y * BOX2SF ), sf::Color::Blue ),
+				sf::Vertex( sf::Vector2f( leftTether->shotBody->GetPosition().x * BOX2SF, 
+				leftTether->shotBody->GetPosition().y * BOX2SF ), sf::Color::Blue ),
 				sf::Vertex( sf::Vector2f( GetPosition().x * BOX2SF, 
 				GetPosition().y * BOX2SF ), sf::Color::Blue )
 			};
@@ -338,12 +316,12 @@ void PlayerChar::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 			target->draw( line, 2, sf::Lines );
 		}
 
-		if( rightTetherShotBody != NULL )
+		if( rightState == "shot" )
 		{
 			sf::Vertex line [] = 
 			{
-				sf::Vertex( sf::Vector2f( rightTetherShotBody->GetPosition().x * BOX2SF, 
-				rightTetherShotBody->GetPosition().y * BOX2SF ), sf::Color::Red ),
+				sf::Vertex( sf::Vector2f( rightTether->shotBody->GetPosition().x * BOX2SF, 
+				rightTether->shotBody->GetPosition().y * BOX2SF ), sf::Color::Red ),
 				sf::Vertex( sf::Vector2f( GetPosition().x * BOX2SF, 
 				GetPosition().y * BOX2SF ), sf::Color::Red )
 			};
@@ -351,7 +329,7 @@ void PlayerChar::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 			target->draw( line, 2, sf::Lines );
 		}
 
-		if( leftTether != NULL )
+		if( leftState == "anchored" || leftState == "locked" )
 		{
 			sf::Vertex *line = new sf::Vertex[1 + leftTether->anchorPoints.size()];// =
 			
@@ -376,7 +354,7 @@ void PlayerChar::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 			delete [] line;
 		}
 
-		if( rightTether != NULL )
+		if( rightState == "anchored" || rightState == "locked" )
 		{
 			sf::Vertex *line = new sf::Vertex[1 + rightTether->anchorPoints.size()];// =
 			
@@ -577,9 +555,11 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addFunction( "CreateTether", &PlayerChar::CreateTether )
 				.addFunction( "TetherShot", &PlayerChar::TetherShot )
 				.addFunction( "ReleaseTether", &PlayerChar::ReleaseTether )
-				.addFunction( "LeftTetherActive", &PlayerChar::LeftTetherActive )
-				.addFunction( "RightTetherActive", &PlayerChar::RightTetherActive )
+				.addFunction( "GetTetherState", &PlayerChar::GetTetherState )
+				//.addFunction( "LeftTetherActive", &PlayerChar::LeftTetherActive )
+				//.addFunction( "RightTetherActive", &PlayerChar::RightTetherActive )
 				.addFunction( "MaxTetherLength", &PlayerChar::MaxTetherLength )
+				.addFunction( "LockTether", &PlayerChar::LockTether )
 				.addData( "hitlagFrames", &PlayerChar::hitlagFrames )
 			.endClass()
 			//.deriveClass<TreeNodeActor, GroupActor>("TreeNodeChar")

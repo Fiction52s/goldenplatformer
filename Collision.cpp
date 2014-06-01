@@ -5,6 +5,7 @@
 #include "Globals.h"
 #include <list>
 #include "Room.h"
+#include "Tether.h"
 
 using namespace std;
 using namespace luabridge;
@@ -289,7 +290,6 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 	
 	if( aLayer == ( 1 << CollisionLayers::TetherShot ) || bLayer == ( 1 << CollisionLayers::TetherShot ) )
 	{
-
 		int numPoints = contact->GetManifold()->pointCount;
 
 		b2WorldManifold worldManifold;
@@ -314,21 +314,10 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 			}
 		}
 
-		
-		
-
-
-		//player->CreateTether( furthestPoint.x, furthestPoint.y, sqrt( distSqr ) );
-//		player->tetherHit = true;
-//		player->tetherPoint = furthestPoint;
-
 		b2Body * body = NULL;
 		if( aLayer == ( 1 << CollisionLayers::TetherShot ) )
 		{
 			body = contact->GetFixtureA()->GetBody();
-
-			
-			//stage->player->CreateTether( 
 		}
 		else
 		{
@@ -337,16 +326,19 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 
 		assert( body != NULL );
 
-		if( body == player->leftTetherShotBody )
+		Tether *t = NULL;
+		if( body == player->leftTether->shotBody )
 		{
-			player->leftTetherHit = true;
-			player->leftTetherPoint = furthestPoint;
+			t = player->leftTether;
 		}
 		else
 		{
-			player->rightTetherHit = true;
-			player->rightTetherPoint = furthestPoint;
+			t = player->rightTether;
 		}
+
+
+		t->shotHit = true;
+		t->shotHitPoint = furthestPoint;
 	}
 	else if( aLayer == ( 1 << CollisionLayers::Tether ) || bLayer == ( 1 << CollisionLayers::Tether ) )
 	{

@@ -8,8 +8,9 @@ struct Tether : public b2RayCastCallback
 	Tether( Stage *st, b2Body *playerBody, b2World *world, float maxLength );
 	~Tether();
 	b2Body *bodies;
-	void Init( b2Vec2 pos );
+	void Anchor();
 	void Split( PlayerChar *player, b2Vec2 splitPoint );
+	void Join( PlayerChar *player );
 	b2Vec2 anchor;
 	void Update( PlayerChar *player );
 	void SetMaxLength( float max );
@@ -22,23 +23,37 @@ struct Tether : public b2RayCastCallback
 	Stage *st;
 	b2World *world;
 
+	float lockedRopeLength;
+
 	float32 ReportFixture( b2Fixture* fixture, 
 		const b2Vec2& point, const b2Vec2& normal, 
 		float32 fraction);
-
+	void Lock( PlayerChar *player );
 	void Reset();
-	bool CheckTetherShot( b2Body *shotBody );
+	bool CheckTetherShot();
+	void Shot( PlayerChar *player,const b2Vec2 &vel );
 	b2Vec2 closest;
 	float32 closestFrac;
 	std::list<std::pair<b2Vec2, float>> closestList;
-	bool initialized;
+	bool anchored;
+
+	bool shotHit;
+	b2Vec2 shotHitPoint;
+
+	std::string GetState();
 	
 	bool splitting;
-	bool something;
+	bool hitSomething;
 	bool checking;
-	bool something2;
+	bool hitSomethingChecking;
+
+	bool locked;
+
+
 
 	float maxLen;
+
+	b2Body *shotBody;
 };
 
 #endif

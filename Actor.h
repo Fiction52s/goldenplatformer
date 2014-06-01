@@ -756,16 +756,19 @@ struct PlayerChar: public SingleActor
 	sf::Shader cloneShader;
 	b2Vec2 carryVel;
 
+	void LockTether( bool left );
+	std::string GetTetherState( bool left );
+
 	Tether * leftTether;
 	b2Body *leftTetherShotBody;
 	b2Vec2 leftTetherPoint;
-	bool LeftTetherActive();
+	//bool LeftTetherActive();
 
 	Tether * rightTether;
 	b2Body *rightTetherShotBody;
 	bool rightTetherHit;
 	b2Vec2 rightTetherPoint;
-	bool RightTetherActive();
+	//bool RightTetherActive();
 
 	bool leftTetherHit;
 	
