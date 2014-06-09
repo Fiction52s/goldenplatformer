@@ -32,10 +32,16 @@ struct Tether : public b2RayCastCallback
 	void Reset();
 	bool CheckTetherShot();
 	void Shot( PlayerChar *player,const b2Vec2 &vel );
+	void Grow( float amount );
+	void Shrink( float amount );
 	b2Vec2 closest;
 	float32 closestFrac;
 	std::list<std::pair<b2Vec2, float>> closestList;
 	bool anchored;
+
+//	b2Vec2 shotDelta;
+//	b2Vec2 shotVelocity;
+//	bool shotActive;
 
 	bool shotHit;
 	b2Vec2 shotHitPoint;
@@ -47,13 +53,20 @@ struct Tether : public b2RayCastCallback
 	bool checking;
 	bool hitSomethingChecking;
 
+	std::string raySetting;
+	bool shotCheckFlag;
+
 	bool locked;
 
-
+	b2Vec2 shotPos;
+	b2Vec2 shotVelocity;
+	bool shotActive;
 
 	float maxLen;
 
 	b2Body *shotBody;
+
+	bool shortReset;
 };
 
 #endif

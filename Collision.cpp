@@ -290,6 +290,7 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 	
 	if( aLayer == ( 1 << CollisionLayers::TetherShot ) || bLayer == ( 1 << CollisionLayers::TetherShot ) )
 	{
+		assert( 0 && "tethershot error" );
 		int numPoints = contact->GetManifold()->pointCount;
 
 		b2WorldManifold worldManifold;

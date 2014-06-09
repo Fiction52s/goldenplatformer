@@ -748,7 +748,10 @@ struct PlayerChar: public SingleActor
 	void CreateTether( float posX, float posY, float maxLength, bool left );
 	void ReleaseTether( bool left);
 	void MaxTetherLength( bool left );
-	void TetherShot(float velx, float vely, bool left);
+	void TetherShot(float shotSpeed, bool left);
+
+	void GrowTether( float amount, bool left );
+	void ShrinkTether( float amount, bool left );
 	//virtual void CloneDraw( sf::RenderTarget *target );
 	ControllerState currentInput;
 	ControllerState prevInput;
@@ -758,6 +761,12 @@ struct PlayerChar: public SingleActor
 
 	void LockTether( bool left );
 	std::string GetTetherState( bool left );
+
+	bool tetherAim;
+
+	void SetTetherAim( bool on );
+	void SetStoredRadians( double rads );
+	double storedRadians;
 
 	Tether * leftTether;
 	b2Body *leftTetherShotBody;
