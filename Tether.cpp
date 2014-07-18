@@ -207,7 +207,7 @@ void Tether::Update( PlayerChar *player )
 			raySetting = "joining";
 			world->RayCast( this, (*rIt), player->GetPosition() );	
 
-			int rayCastNum = 50;
+			int rayCastNum = 1000;
 			b2Vec2 blah( player->GetPosition().x - anchorPoints.back().x, player->GetPosition().y - anchorPoints.back().y );
 			for( int b = 1; b < rayCastNum; ++b )
 			{

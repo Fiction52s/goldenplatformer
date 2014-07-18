@@ -430,8 +430,8 @@ void PlayerChar::Draw( sf::RenderTarget *target, uint32 spriteIndex )
 
 			}
 
-			float x = sin( storedRadians );
-			float y = cos( storedRadians );
+			double x = sin( storedRadians );
+			double y = cos( storedRadians );
 			
 			float length = 2000;
 			sf::Vector2f playerPos( GetPosition().x * BOX2SF, GetPosition().y * BOX2SF );

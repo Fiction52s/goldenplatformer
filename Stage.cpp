@@ -113,7 +113,7 @@ void Camera::UpdateZoom()
 		//zoom = stage->GetCameraZoom();
 		PlayerChar *player = stage->player;
 		float xVelAbs = abs( player->GetVelocity().x - player->GetCarryVelocity().x );
-		float zoomGoal =  (xVelAbs * .02) * maxZoom;
+		float zoomGoal =  (xVelAbs * .022) * maxZoom; //used to be .02
 		
 	
 		if( abs( player->GetVelocity().y ) >= 44 )
@@ -142,7 +142,7 @@ void Camera::UpdateZoom()
 			slowCounter++;
 			if( slowCounter > 5 )
 			{
-				zoom -= .01;
+				zoom -= .011; //.01
 				if( zoom < zoomGoal ) zoom = zoomGoal;
 			}
 		}
@@ -1928,13 +1928,216 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 				if( x > 0 && y < stageHeight - 1 ) chainsDownLeft = 
 					&tileSetMap[staticTileSets[x-1][y+1]][staticLocalID[x-1][y+1]];
 
-				list<list<b2Vec2>> surroundings;
+				//list<list<b2Vec2>> surroundings;
 				
 
+				
 				for( list<list<b2Vec2>>::iterator localChainsIt = localChains.begin(); 
 					localChainsIt != localChains.end(); ++localChainsIt )
 				{
 					list<b2Vec2> chain = (*localChainsIt);
+
+					bool ignoreChain = false; //ignore the chain if it lines up with another chain. remove unneeded chains.
+					if( x > 0 && chainsLeft != NULL && chain.front().x == 0 && chain.back().x == 0 )
+					{
+						//check left
+						for( list<list<b2Vec2>>::iterator cIt = chainsLeft->begin(); 
+							cIt != chainsLeft->end(); ++cIt)
+						{
+							list<b2Vec2> leftChain = (*cIt);
+							if( leftChain.front().x == 64 && leftChain.back().x == 64 )
+							{
+								uint32 edgeLength = abs( chain.front().y - chain.back().y );
+								uint32 leftEdgeLength = abs( leftChain.front().y - leftChain.back().y );
+								
+								if( edgeLength > leftEdgeLength )
+								{
+									uint32 chainBackY = chain.back().y;
+									uint32 chainFrontY = chain.front().y;
+									chain.clear();
+									if( chainFrontY == leftChain.front().y )
+									{
+										chain.push_back( b2Vec2( 0, leftChain.back().y ) );
+										chain.push_back( b2Vec2( 0, chainBackY ) );
+									}
+									else if( chainBackY == leftChain.back().y )
+									{
+										chain.push_back( b2Vec2( 0, chainFrontY ) );
+										chain.push_back( b2Vec2( 0, leftChain.front().y ) );
+									}
+									else
+									{
+										cout << "issue here" << endl;
+										assert( 0 );
+									}
+									
+									
+								}
+								else
+								{
+									//cout << "ignoring!" << endl;
+									ignoreChain = true;
+								}
+
+								break;
+							}
+							
+						}
+
+						if( ignoreChain )
+							continue;
+					}
+
+					if( x < stageWidth - 1 && chainsRight != NULL && chain.front().x == 64 && chain.back().x == 64 )
+					{
+						//check left
+						for( list<list<b2Vec2>>::iterator cIt = chainsRight->begin(); 
+							cIt != chainsRight->end(); ++cIt)
+						{
+							list<b2Vec2> rightChain = (*cIt);
+							if( rightChain.front().x == 0 && rightChain.back().x == 0 )
+							{
+								uint32 edgeLength = abs( chain.front().y - chain.back().y );
+								uint32 rightEdgeLength = abs( rightChain.front().y - rightChain.back().y );
+								
+								if( edgeLength > rightEdgeLength )
+								{
+									uint32 chainBackY = chain.back().y;
+									uint32 chainFrontY = chain.front().y;
+									chain.clear();
+									if( chainFrontY == rightChain.front().y )
+									{
+										chain.push_back( b2Vec2( 64, rightChain.back().y ) );
+										chain.push_back( b2Vec2( 64, chainBackY ) );
+									}
+									else if( chainBackY == rightChain.back().y )
+									{
+										chain.push_back( b2Vec2( 64, chainFrontY ) );
+										chain.push_back( b2Vec2( 64, rightChain.front().y ) );
+									}
+									else
+									{
+										cout << "issue here" << endl;
+										assert( 0 );
+									}
+									
+									
+								}
+								else
+								{
+								//	cout << "ignoring!" << endl;
+									ignoreChain = true;
+								}
+
+								break;
+							}
+						}
+
+						if( ignoreChain )
+							continue;
+					}
+
+					if( y > 0 && chainsUp != NULL && chain.front().y == 0 && chain.back().y == 0 )
+					{
+						//check left
+						for( list<list<b2Vec2>>::iterator cIt = chainsUp->begin(); 
+							cIt != chainsUp->end(); ++cIt)
+						{
+							list<b2Vec2> upChain = (*cIt);
+							if( upChain.front().y == 64 && upChain.back().y == 64 )
+							{
+								uint32 edgeLength = abs( chain.front().x - chain.back().x );
+								uint32 upEdgeLength = abs( upChain.front().x - upChain.back().x );
+								
+								if( edgeLength > upEdgeLength )
+								{
+									uint32 chainBackX = chain.back().x;
+									uint32 chainFrontX = chain.front().x;
+									chain.clear();
+									if( chainFrontX == upChain.front().x )
+									{
+										chain.push_back( b2Vec2( upChain.back().x, 0 ) );
+										chain.push_back( b2Vec2( chainBackX, 0 ) );
+									}
+									else if( chainBackX == upChain.back().x )
+									{
+										chain.push_back( b2Vec2( chainFrontX, 0 ) );
+										chain.push_back( b2Vec2( upChain.front().x, 0 ) );
+									}
+									else
+									{
+										cout << "issue here" << endl;
+										assert( 0 );
+									}
+									
+									
+								}
+								else
+								{
+								//	cout << "ignoring!" << endl;
+									ignoreChain = true;
+								}
+
+								break;
+							}
+						}
+
+						if( ignoreChain )
+							continue;
+					}
+
+					if( y < stageHeight - 1 && chainsDown != NULL && chain.front().y == 64 && chain.back().y == 64 )
+					{
+						//check left
+						for( list<list<b2Vec2>>::iterator cIt = chainsDown->begin(); 
+							cIt != chainsDown->end(); ++cIt)
+						{
+							list<b2Vec2> downChain = (*cIt);
+							if( downChain.front().y == 0 && downChain.back().y == 0 )
+							{
+								uint32 edgeLength = abs( chain.front().x - chain.back().x );
+								uint32 downEdgeLength = abs( downChain.front().x - downChain.back().x );
+								
+								if( edgeLength > downEdgeLength )
+								{
+									uint32 chainBackX = chain.back().x;
+									uint32 chainFrontX = chain.front().x;
+									chain.clear();
+									if( chainFrontX == downChain.front().x )
+									{
+										chain.push_back( b2Vec2( downChain.back().x, 64 ) );
+										chain.push_back( b2Vec2( chainBackX, 64 ) );
+									}
+									else if( chainBackX == downChain.back().x )
+									{
+										chain.push_back( b2Vec2( chainFrontX, 64 ) );
+										chain.push_back( b2Vec2( downChain.front().x, 64 ) );
+									}
+									else
+									{
+										cout << "issue here" << endl;
+										assert( 0 );
+									}
+									
+									
+								}
+								else
+								{
+								//	cout << "ignoring!" << endl;
+									ignoreChain = true;
+								}
+
+								break;
+							}
+						}
+
+						if( ignoreChain )
+							continue;
+					}
+
+
+
+
 					list<b2Vec2> boxChain;
 					for( list<b2Vec2>::iterator chainIt = chain.begin(); chainIt != chain.end(); ++chainIt )
 					{
@@ -1944,7 +2147,34 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						boxChain.push_back( finalVector );
 					}
 
+					if (chainsUp != NULL) 
+					{
+						for( list<list<b2Vec2>>::iterator cIt = chainsUp->begin(); 
+							cIt != chainsUp->end(); ++cIt)
+						{
+							list<b2Vec2> upChain = (*cIt);
+							list<b2Vec2> upBoxChain;
 
+							for( list<b2Vec2>::iterator chainIt = upChain.begin(); chainIt != upChain.end(); ++chainIt )
+							{
+								b2Vec2 finalVector = (*chainIt );
+								finalVector *= SF2BOX;
+								finalVector += b2Vec2( x, y );
+								upBoxChain.push_back( finalVector );
+							}
+
+							bool same = true;
+							for ( list<b2Vec2>::iterator boxIt = upBoxChain.begin(); boxIt != upBoxChain.end(); ++boxIt )
+							{
+
+							}
+
+						}
+					}
+					//	if (chainsDown != NULL) GhostVertexCheck( *chainsDown, chainShape, x, y + 1, boxChain, bestPrev, bestNext );
+					//	if (chainsLeft != NULL) GhostVertexCheck( *chainsLeft, chainShape, x - 1, y, boxChain, bestPrev, bestNext );
+					//	if (chainsRight != NULL) GhostVertexCheck( *chainsRight, chainShape, x + 1, y, boxChain, bestPrev, bestNext );
+					//	if (chainsUpLeft != NULL) GhostVertexCheck( *chainsUpLeft, chainShape, x - 1, y - 1, boxChain, bestPrev, bestNext );*/
 
 					b2Vec2 *boxChainArray = new b2Vec2[boxChain.size()];
 					int i = 0;
@@ -1962,6 +2192,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 					}
 					else
 					{
+						cout << "creating chain" << endl;
 						chainShape.CreateChain( boxChainArray, boxChain.size() );
 						bool prevSet = false;
 						bool nextSet = false;
