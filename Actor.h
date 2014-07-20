@@ -792,6 +792,11 @@ struct PlayerChar: public SingleActor
 
 	uint32 hitlagFrames;
 
+	bool dropThroughFlag;
+	bool cancelDropFlag;
+	//auto drops if it isn't stopped. this is to prevent
+	//dropping animation when on both a dropping and non dropping tile
+
 	virtual void SaveState();
 	virtual void LoadState();
 	
