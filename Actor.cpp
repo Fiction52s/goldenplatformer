@@ -33,7 +33,9 @@ PlayerChar::PlayerChar( const b2Vec2 &pos, const b2Vec2 &vel,
 {
 	leftTetherHit = false;
 	rightTetherHit = false;
-	
+	dropThroughFlag = false;
+	cancelDropFlag = false;
+
 	leftTetherPoint = b2Vec2(0, 0 );
 	rightTetherPoint = b2Vec2(0, 0 );
 
@@ -633,6 +635,8 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addFunction( "SetTetherAim", &PlayerChar::SetTetherAim )
 				.addFunction( "SetStoredRadians", &PlayerChar::SetStoredRadians )
 				.addData( "hitlagFrames", &PlayerChar::hitlagFrames )
+				.addData( "dropThroughFlag", &PlayerChar::dropThroughFlag )
+				.addData( "cancelDropFlag", &PlayerChar::cancelDropFlag )
 			.endClass()
 			//.deriveClass<TreeNodeActor, GroupActor>("TreeNodeChar")
 			//	.addData( "growthSpeed", &TreeNodeActor::growthSpeed )

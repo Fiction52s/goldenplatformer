@@ -486,6 +486,8 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 			.deriveClass<PlayerChar, SingleActor>("PlayerChar")
 				.addFunction( "SetCarryVelocity", &PlayerChar::SetCarryVelocity )
 				.addFunction( "GetCarryVelocity", &PlayerChar::GetCarryVelocity )
+				.addData( "dropThroughFlag", &PlayerChar::dropThroughFlag )
+				.addData( "cancelDropFlag", &PlayerChar::cancelDropFlag )
 			.endClass()
 			//.deriveClass<PlayerChar, Actor>( "PlayerChar" )
 			//.endClass()
@@ -1902,6 +1904,17 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 			
 		mapBody = world->CreateBody( &mapBodyDef );
 
+
+		list<list<b2Vec2>> *** tempLines = new list<list<b2Vec2>>** [stageWidth];
+		for( int r = 0; r < stageWidth; ++r )
+		{
+			tempLines[r] = new list<list<b2Vec2>>* [stageHeight];
+			for( int c = 0; c < stageHeight; ++c )
+			{
+				tempLines[r][c] = NULL;
+			}
+		}
+
 		for( int x = 0; x < stageWidth; ++x )
 		{
 			for( int y = 0; y < stageHeight; ++y )
@@ -1935,8 +1948,9 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 				for( list<list<b2Vec2>>::iterator localChainsIt = localChains.begin(); 
 					localChainsIt != localChains.end(); ++localChainsIt )
 				{
+					
 					list<b2Vec2> chain = (*localChainsIt);
-
+					
 					bool ignoreChain = false; //ignore the chain if it lines up with another chain. remove unneeded chains.
 					if( x > 0 && chainsLeft != NULL && chain.front().x == 0 && chain.back().x == 0 )
 					{
@@ -2066,7 +2080,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 									}
 									else
 									{
-										cout << "issue here" << endl;
+										cout << "issue here: " << x << ", " << y << endl;
 										assert( 0 );
 									}
 									
@@ -2136,7 +2150,40 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 					}
 
 
+					if( tempLines[x][y] == NULL )
+					{
+						tempLines[x][y] = new list<list<b2Vec2>>;
+					}
 
+					tempLines[x][y]->push_back( chain );
+					
+
+
+				//	(b2ChainShape*)(tileChainFixture->GetShape())->
+				}
+
+			}
+		}
+
+		for( int x = 0; x < stageWidth; ++x )
+		{
+			for( int y = 0; y < stageHeight; ++y )
+			{
+				list<list<b2Vec2>> *lines = tempLines[x][y];
+
+				if( lines == NULL ) continue;
+				//cout << "x: " << x << ", y: " << y << endl;
+				for( list<list<b2Vec2>>::iterator lineListIt = lines->begin(); lineListIt != lines->end(); ++lineListIt )
+				{
+					//for( list<b2Vec2>::iterator lineIt = (*lineListIt).begin(); lineIt != (*lineListIt).end(); ++lineIt )
+					//{
+						//join within a single square
+
+						//then join within other squares
+					//}
+
+					list<b2Vec2> &chain = (*lineListIt);
+				
 
 					list<b2Vec2> boxChain;
 					for( list<b2Vec2>::iterator chainIt = chain.begin(); chainIt != chain.end(); ++chainIt )
@@ -2147,35 +2194,8 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						boxChain.push_back( finalVector );
 					}
 
-					if (chainsUp != NULL) 
-					{
-						for( list<list<b2Vec2>>::iterator cIt = chainsUp->begin(); 
-							cIt != chainsUp->end(); ++cIt)
-						{
-							list<b2Vec2> upChain = (*cIt);
-							list<b2Vec2> upBoxChain;
 
-							for( list<b2Vec2>::iterator chainIt = upChain.begin(); chainIt != upChain.end(); ++chainIt )
-							{
-								b2Vec2 finalVector = (*chainIt );
-								finalVector *= SF2BOX;
-								finalVector += b2Vec2( x, y );
-								upBoxChain.push_back( finalVector );
-							}
-
-							bool same = true;
-							for ( list<b2Vec2>::iterator boxIt = upBoxChain.begin(); boxIt != upBoxChain.end(); ++boxIt )
-							{
-
-							}
-
-						}
-					}
-					//	if (chainsDown != NULL) GhostVertexCheck( *chainsDown, chainShape, x, y + 1, boxChain, bestPrev, bestNext );
-					//	if (chainsLeft != NULL) GhostVertexCheck( *chainsLeft, chainShape, x - 1, y, boxChain, bestPrev, bestNext );
-					//	if (chainsRight != NULL) GhostVertexCheck( *chainsRight, chainShape, x + 1, y, boxChain, bestPrev, bestNext );
-					//	if (chainsUpLeft != NULL) GhostVertexCheck( *chainsUpLeft, chainShape, x - 1, y - 1, boxChain, bestPrev, bestNext );*/
-
+				
 					b2Vec2 *boxChainArray = new b2Vec2[boxChain.size()];
 					int i = 0;
 					for( list<b2Vec2>::iterator boxChainIt = boxChain.begin(); boxChainIt != boxChain.end(); 
@@ -2186,20 +2206,96 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 					}
 
 					b2ChainShape chainShape;
+					
 					if( boxChain.front() == boxChain.back() )
 					{
 						chainShape.CreateLoop( boxChainArray, boxChain.size() );
 					}
 					else
 					{
-						cout << "creating chain" << endl;
+						//cout << "creating chain" << endl;
 						chainShape.CreateChain( boxChainArray, boxChain.size() );
-						bool prevSet = false;
-						bool nextSet = false;
+						//bool prevSet = false;
+						//bool nextSet = false;
 						//cout << "before: " << chainShape.m_hasPrevVertex << ", " << chainShape.m_hasNextVertex << endl;
 						b2Vec2 bestPrev;
+						
 						b2Vec2 bestNext;
-						if (chainsUp != NULL) GhostVertexCheck( *chainsUp, chainShape, x, y - 1, boxChain, bestPrev, bestNext );
+
+						//same spot
+						list<list<b2Vec2>> tempStuff;
+						for( list<list<b2Vec2>>::iterator lineListIt2 = lines->begin(); lineListIt2 != lines->end(); ++lineListIt2 )
+						{
+							if( (*lineListIt2) != chain )
+							{
+								tempStuff.push_back( (*lineListIt2) );
+							}
+						}
+						
+						GhostVertexCheck( tempStuff, chainShape, x, y, boxChain, bestPrev, bestNext );
+						
+
+						if( y > 0 && tempLines[x][y-1] != NULL )
+						{
+							//up
+							
+							GhostVertexCheck( *tempLines[x][y-1], chainShape, x, y-1, boxChain, bestPrev, bestNext );
+						}
+
+						if( y < stageHeight - 1 && tempLines[x][y+1] != NULL )
+						{
+							//down
+
+							GhostVertexCheck( *tempLines[x][y+1], chainShape, x, y+1, boxChain, bestPrev, bestNext );
+						}
+
+						if( x > 0 && tempLines[x-1][y] != NULL )
+						{
+							//left
+
+							GhostVertexCheck( *tempLines[x-1][y], chainShape, x-1, y, boxChain, bestPrev, bestNext );
+						}
+
+						if( x < stageWidth - 1 && tempLines[x+1][y] != NULL )
+						{
+							//right
+
+							GhostVertexCheck( *tempLines[x+1][y], chainShape, x+1, y, boxChain, bestPrev, bestNext );
+						}
+
+						if( x > 0 && y > 0 && tempLines[x-1][y-1] != NULL )
+						{
+							//up-left
+
+							GhostVertexCheck( *tempLines[x-1][y-1], chainShape, x-1, y-1, boxChain, bestPrev, bestNext );
+						}
+
+						if( x > 0 && y < stageHeight - 1 && tempLines[x-1][y+1] != NULL )
+						{
+							//down-left
+
+							GhostVertexCheck( *tempLines[x-1][y+1], chainShape, x-1, y+1, boxChain, bestPrev, bestNext );
+						}
+
+						if( x < stageWidth - 1 && y > 0 && tempLines[x+1][y-1] != NULL )
+						{
+							//up-right
+
+							GhostVertexCheck( *tempLines[x+1][y-1], chainShape, x+1, y-1, boxChain, bestPrev, bestNext );
+						}
+
+						if( x < stageWidth - 1 && y < stageHeight - 1 && tempLines[x+1][y+1] != NULL  )
+						{
+							//down-right
+
+							GhostVertexCheck( *tempLines[x+1][y+1], chainShape, x+1, y+1, boxChain, bestPrev, bestNext );
+						}
+
+						//cout << "chainStart: " << boxChain.front().x << ", " << boxChain.front().y << " / bestPrev: " << chainShape.m_prevVertex.x << ", " << chainShape.m_prevVertex.y << endl;
+						//cout << "chainEnd: " << boxChain.back().x << ", " << boxChain.back().y << " / bestNext: " << chainShape.m_nextVertex.x << ", " << chainShape.m_nextVertex.y << endl << endl;
+
+
+					/*	if (chainsUp != NULL) GhostVertexCheck( *chainsUp, chainShape, x, y - 1, boxChain, bestPrev, bestNext );
 						if (chainsDown != NULL) GhostVertexCheck( *chainsDown, chainShape, x, y + 1, boxChain, bestPrev, bestNext );
 						if (chainsLeft != NULL) GhostVertexCheck( *chainsLeft, chainShape, x - 1, y, boxChain, bestPrev, bestNext );
 						if (chainsRight != NULL) GhostVertexCheck( *chainsRight, chainShape, x + 1, y, boxChain, bestPrev, bestNext );
@@ -2209,7 +2305,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						
 						if (chainsDownRight != NULL) GhostVertexCheck( *chainsDownRight, chainShape, x + 1, y + 1, boxChain, bestPrev, bestNext );
 						
-						if (chainsDownLeft != NULL) GhostVertexCheck( *chainsDownLeft, chainShape, x - 1, y + 1, boxChain, bestPrev, bestNext );
+						if (chainsDownLeft != NULL) GhostVertexCheck( *chainsDownLeft, chainShape, x - 1, y + 1, boxChain, bestPrev, bestNext );*/
 						//cout << "after: " << chainShape.m_hasPrevVertex << ", " << chainShape.m_hasNextVertex << endl;
 						//b2Vec2 next = 
 					}
@@ -2224,9 +2320,22 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 
 					b2Fixture *tileChainFixture = mapBody->CreateFixture( &fd );
 				}
-
 			}
 		}
+
+		for( int x = 0; x < stageWidth; ++x )
+		{
+			for( int y = 0; y < stageHeight; ++y )
+			{
+				if( tempLines[x][y] != NULL )
+				{
+					delete tempLines[x][y];
+				}
+			}
+			delete [] tempLines[x];
+		}
+		delete [] tempLines;
+
 
 		for( map< TileSet*, list< list< b2Vec2 > >* >::iterator tileSetMapIt = tileSetMap.begin(); 
 			tileSetMapIt != tileSetMap.end(); ++tileSetMapIt )
@@ -5148,6 +5257,7 @@ bool Stage::HandleCollision( b2Contact *contact )
 
 	
 	
+	
 	TrueActor *actor = NULL;
 	b2Vec2 tilePos;
 	uint32 localTileID;
@@ -5157,6 +5267,7 @@ bool Stage::HandleCollision( b2Contact *contact )
 		b2Vec2 *tempVec= (b2Vec2*)(a->GetUserData());
 		tilePos.x = tempVec->x;
 		tilePos.y = tempVec->y;
+		
 		//GlobalToLocal( id );
 		//cout << "id: " << id << endl; 
 		
@@ -5173,7 +5284,7 @@ bool Stage::HandleCollision( b2Contact *contact )
 		//cout << "id: " << id << endl; 
 	}
 	//localize the global ID
-	GlobalToLocal( localTileID );
+	localTileID = staticLocalID[(int)tilePos.x][(int)tilePos.y];
 	
 
 	assert( actor != NULL );
@@ -5193,7 +5304,10 @@ bool Stage::HandleCollision( b2Contact *contact )
 	b2Vec2 testm = m->localPoint;
 	testm = actor->GetBody()->GetWorldPoint( testm );
 
-
+	//cout << "local tile id: " << localTileID << endl;
+	//GlobalToLocal( localTileID );
+	
+	//cout << "collision at: " << tilePos.x << ", " << tilePos.y << " / tiletype: " << localTileID << " / normal: " << m->localNormal.x << ", " << m->localNormal.y << endl;
 	//cout << "testm: " << testm.x << ", " << testm.y << endl;
 	//cout << "local: " << contact->GetManifold()->points[0].localPoint.x << ", " << contact->GetManifold()->points[0].localPoint.y << endl;
 	//cout << "localnorm: " << contact->GetManifold()->localNormal.x << ", " << contact->GetManifold()->localNormal.y << endl;
@@ -5514,6 +5628,8 @@ TileSet * Stage::LoadTileSet( const string &dir, const std::string &fileName, in
 						.deriveClass<PlayerChar, SingleActor>("PlayerChar")
 							.addFunction( "SetCarryVelocity", &PlayerChar::SetCarryVelocity )
 							.addFunction( "GetCarryVelocity", &PlayerChar::GetCarryVelocity )
+							.addData( "dropThroughFlag", &PlayerChar::dropThroughFlag )
+							.addData( "cancelDropFlag", &PlayerChar::cancelDropFlag )
 						.endClass()
 						.beginClass<b2Vec2>( "b2Vec2" )
 							.addConstructor<void(*)(void)>()
@@ -5636,8 +5752,8 @@ TileSet * Stage::LoadTileSet( const string &dir, const std::string &fileName, in
 						}
 						i += 2;
 
-						int x = boost::lexical_cast<int>( xss.str() );
-						int y = boost::lexical_cast<int>( yss.str() );
+						float x = boost::lexical_cast<float>( xss.str() );
+						float y = boost::lexical_cast<float>( yss.str() );
 
 						chains[localID].back().push_back( b2Vec2( x, y ) );
 					}

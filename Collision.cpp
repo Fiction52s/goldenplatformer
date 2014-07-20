@@ -395,6 +395,7 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 	{
 		bool contactEnabled =  stage->HandleCollision( contact );
 		contact->SetEnabled( contactEnabled );
+		//cout << "Stage set enabled: " << contact->IsEnabled() << endl;
 		TrueActor *actor;
 		b2Body *actorBody = NULL;
 		if( aLayer == 1 << CollisionLayers::Environment )
@@ -425,6 +426,8 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 		bool enable = actor->HandleStageCollision( contact->GetManifold()->pointCount, 
 			worldManifold, contactEnabled );
 		contact->SetEnabled( enable );
+
+	//	cout << "actor set enabled: " << contact->IsEnabled() << endl;
 		/*if( !lua_isnumber( l, -1 ) )
 		{
 			assert( 0 && "needs to be a float" );
