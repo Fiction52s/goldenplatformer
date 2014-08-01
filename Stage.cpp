@@ -3624,7 +3624,7 @@ bool Stage::Run()
 			{
 				renderOnce = true;
 
-				if( currentInput.leftTrigger > 10 && prevInput.leftTrigger <= 10 || currentInput.rightShoulder )
+				if( Keyboard::isKeyPressed( Keyboard::Left ) )
 				{
 					m_skipFrame = true;
 					prevInput = storedInput;
@@ -4320,7 +4320,7 @@ bool Stage::Run()
 
 					// define the texture coordinates of the 4 points of the current tile 
 					
-					float blend = 0.f;//.5f;// 0.f;//-.5f;//0.5f;
+					float blend = 0.5f;//.5f;// 0.f;//-.5f;//0.5f;
 					if( c.zoom  <= 1.7 )
 					{
 						//blend = 0.f;
@@ -4992,7 +4992,9 @@ void Stage::DebugDraw( sf::RenderTarget *rt )
 			case( 1 << CollisionLayers::TetherShot ):
 				color = sf::Color::Magenta;
 				break;
-
+			case( 1 << CollisionLayers::SpeedBall ):
+				color = sf::Color::Blue;
+				break;
 			case ( 1 << CollisionLayers::Environment ):
 				if( debugDrawEnv )
 				{

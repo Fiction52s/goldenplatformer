@@ -25,6 +25,7 @@ void CollisionLayers::SetupFixture(CollisionLayers::Layer layer, uint16 &categor
 			maskBits |= 1 << PlayerPhysicsbox;
 			maskBits |= 1 << EnemyPhysicsbox;
 			maskBits |= 1 << TetherShot;
+			maskBits |= 1 << SpeedBall;
 			//maskBits |= 1 << Tether;
 			break;
 		case PlayerHitbox:
@@ -84,6 +85,9 @@ void CollisionLayers::SetupFixture(CollisionLayers::Layer layer, uint16 &categor
 			cout << "tether" << endl;
 			break;
 		case TetherShot:
+			maskBits |= 1 << Environment;
+			break;
+		case SpeedBall:
 			maskBits |= 1 << Environment;
 			break;
 		default:
@@ -340,6 +344,10 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 
 		t->shotHit = true;
 		t->shotHitPoint = furthestPoint;
+	}
+	else if( aLayer == ( 1 << CollisionLayers::SpeedBall ) || bLayer == ( 1 << CollisionLayers::SpeedBall ) )
+	{
+		cout << "speedball colliding" << endl;
 	}
 	else if( aLayer == ( 1 << CollisionLayers::Tether ) || bLayer == ( 1 << CollisionLayers::Tether ) )
 	{

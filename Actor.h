@@ -794,6 +794,13 @@ struct PlayerChar: public SingleActor
 
 	bool dropThroughFlag;
 	bool cancelDropFlag;
+
+	b2Body * speedBallBody;
+	void SetSpeedBallEnabled( bool on );
+	bool IsSpeedBallEnabled();
+	b2Vec2 GetSpeedBallPos();
+	b2Vec2 GetSpeedBallVel();
+
 	//auto drops if it isn't stopped. this is to prevent
 	//dropping animation when on both a dropping and non dropping tile
 

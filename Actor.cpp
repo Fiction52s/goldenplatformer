@@ -114,11 +114,89 @@ void PlayerChar::Init( b2World *world )
 		20 );
 	rightTether = new Tether( stage,actorParams->body, world,
 		20 );
+
+	b2BodyDef speedBallBodyDef;
+	speedBallBodyDef.active = false;
+	speedBallBodyDef.type = b2_dynamicBody;
+	speedBallBodyDef.fixedRotation = false;
+
+	speedBallBody = world->CreateBody( &speedBallBodyDef );
+
+	b2CircleShape cs;
+	cs.m_radius = 1;
+
+	b2FixtureDef fd; 
+	fd.density = .2;
+
+	uint32 speedBallTag = 1500;
+	fd.userData = (void*)speedBallTag; //special number used for the speed ball for no reason
+	fd.friction = .5;
+	fd.restitution = .9;
+	fd.density = 5;
+	fd.shape = &cs;
+	
+	CollisionLayers::SetupFixture( CollisionLayers::SpeedBall, fd.filter.categoryBits, 
+		fd.filter.maskBits );
+
+	speedBallBody->CreateFixture( &fd );
+
+	b2RevoluteJointDef jointDef;
+
+	jointDef.bodyA = speedBallBody;
+	jointDef.bodyB = actorParams->body;
+	
+	b2RevoluteJoint *joint = (b2RevoluteJoint*)world->CreateJoint( &jointDef );
+	
+	
 }
 
 PlayerChar::~PlayerChar()
 {
 	
+}
+
+void PlayerChar::SetSpeedBallEnabled( bool on )
+{
+	if( speedBallBody->IsActive() )
+	{
+		if( on )
+			//nothing
+			assert( 0 && "already enabled speed ball" );
+		else
+		{
+			speedBallBody->SetActive( false );
+		}
+		
+	}
+	else
+	{
+		if( on )
+		{
+			speedBallBody->SetTransform( GetPosition(), 0 );
+			speedBallBody->SetActive( true );
+			speedBallBody->SetLinearVelocity( GetVelocity() );
+			speedBallBody->SetAngularVelocity( 0 );
+		}
+		else
+		{
+			assert( 0 && "ball is already disabled" );
+		}
+	}
+}
+
+bool PlayerChar::IsSpeedBallEnabled()
+{
+	return speedBallBody->IsActive();
+}
+
+b2Vec2 PlayerChar::GetSpeedBallPos()
+{
+	return speedBallBody->GetPosition();
+}
+
+b2Vec2 PlayerChar::GetSpeedBallVel()
+{
+	return speedBallBody->GetLinearVelocity();
 }
 
 void PlayerChar::SetTetherAim( bool on )
@@ -135,6 +213,13 @@ bool PlayerChar::UpdatePrePhysics()
 	//cout << "drawing with stored radians: " << test << endl;
 	leftTether->Update( this );
 	rightTether->Update( this );
+
+	if( speedBallBody->IsActive() )
+	{
+		speedBallBody->SetLinearVelocity( b2Vec2( speedBallBody->GetLinearVelocity().x, speedBallBody->GetLinearVelocity().y + 2 ) );
+	}
+
+	//cout << "speed ball vel: " << speedBallBody->GetLinearVelocity().x << ", " << speedBallBody->GetLinearVelocity().y << endl;
 
 	return f;
 }
@@ -634,6 +719,10 @@ TrueActor::TrueActor( const std::string &actorType, const b2Vec2 &pos, const b2V
 				.addFunction( "LockTether", &PlayerChar::LockTether )
 				.addFunction( "SetTetherAim", &PlayerChar::SetTetherAim )
 				.addFunction( "SetStoredRadians", &PlayerChar::SetStoredRadians )
+				.addFunction( "SetSpeedBallEnabled", &PlayerChar::SetSpeedBallEnabled )
+				.addFunction( "IsSpeedBallEnabled", &PlayerChar::IsSpeedBallEnabled )
+				.addFunction( "GetSpeedBallPos", &PlayerChar::GetSpeedBallPos )
+				.addFunction( "GetSpeedBallVel", &PlayerChar::GetSpeedBallVel )
 				.addData( "hitlagFrames", &PlayerChar::hitlagFrames )
 				.addData( "dropThroughFlag", &PlayerChar::dropThroughFlag )
 				.addData( "cancelDropFlag", &PlayerChar::cancelDropFlag )

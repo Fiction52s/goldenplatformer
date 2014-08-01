@@ -26,6 +26,7 @@ namespace CollisionLayers
 		Tether,
 		TetherTest,
 		TetherShot,
+		SpeedBall,
 		Door
 	};
 	void SetupFixture(CollisionLayers::Layer layer ,
