@@ -702,20 +702,22 @@ void ContactListener::PreSolve( b2Contact* contact, const b2Manifold* oldManifol
 				//contact->SetFriction( 0 );
 				//cout << "layerA " << aLayer << ", layerB " << bLayer << endl;
 				
+				b2WorldManifold worldManifold;
+				contact->GetWorldManifold( &worldManifold );
+
 				uint32 tagA = (uint32)a->GetUserData();
 				bool activeA = false;
 
-				bool enableA = actorA->CollideWithActor( actorB, tagA, activeA );
+				bool enableA = actorA->CollideWithActor( actorB, tagA, activeA, worldManifold.normal );
 				
 
 				uint32 tagB = (uint32)b->GetUserData();
 				bool activeB = false;
 
 
-				bool enableB = actorB->CollideWithActor( actorA, tagB, activeB );
+				bool enableB = actorB->CollideWithActor( actorA, tagB, activeB, -worldManifold.normal );
 
-				b2WorldManifold worldManifold;
-				contact->GetWorldManifold( &worldManifold );
+				
 
 				//if( active )
 				//{

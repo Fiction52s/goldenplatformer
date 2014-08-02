@@ -384,6 +384,8 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 	//load powers here
 	//vertical farming is bit 0
 
+	storedLeftKey = false;
+
 	exitRoom = false;
 	cloneWorld = false;
 	cloneWorldStart = false;
@@ -3606,8 +3608,6 @@ bool Stage::Run()
 				}
 
 				RoomRestart();
-				
-			
 			}
 
 			if( currentInput.back && !prevInput.back )
@@ -3624,16 +3624,16 @@ bool Stage::Run()
 			{
 				renderOnce = true;
 
-				if( Keyboard::isKeyPressed( Keyboard::Left ) )
+				if( Keyboard::isKeyPressed( Keyboard::Left ) && !storedLeftKey )
 				{
 					m_skipFrame = true;
 					prevInput = storedInput;
 
-					for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
+					/*for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 					{
 						cout << "actor: " << (*it)->GetType() << ", (" << (*it)->GetPosition().x 
 							<< ", " << (*it)->GetPosition().y << endl;
-					}
+					}*/
 				}
 
 				if( !m_skipFrame )
@@ -3760,6 +3760,8 @@ bool Stage::Run()
 
 				
 			}
+
+			storedLeftKey = Keyboard::isKeyPressed( Keyboard::Left );
 
 			if( m_singleFrameMode )
 			{

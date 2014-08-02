@@ -312,7 +312,7 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 	{
 		//sf::FloatRect largeRect( camLeft - camSize.x, camTop - camSize.y, camSize.x * 2, camSize.y * 2 );
 
-		if( !activeActors.empty() )
+		/*if( !activeActors.empty() )
 		{
 			sf::FloatRect largeRect( pos.x - size.x, pos.y - size.y * 1.5, size.x * 2, size.y * 3 );
 
@@ -354,7 +354,7 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 				initialized = false;
 				activated = false;
 			}
-		}
+		}*/
 
 		
 	}

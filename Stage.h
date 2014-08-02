@@ -293,6 +293,8 @@ private:
 	std::list<std::pair<TrueActor*, uint32>> frontLayers[4];
 	std::list<std::pair<TrueActor*, uint32>> actorLayer;
 
+	bool storedLeftKey;
+	//for skipping frames
 	
 public:
 	void SetSpritePriority( TrueActor* actor, uint32 spriteIndex, int32 priority );

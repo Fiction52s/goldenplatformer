@@ -1016,12 +1016,14 @@ void TrueActor::HitActor( TrueActor *otherActor, uint32 hitboxTag,
 	lua_pop( L, 1 );
 }
 
-bool TrueActor::CollideWithActor( TrueActor *otherActor, uint32 tag, bool &isActive )
+bool TrueActor::CollideWithActor( TrueActor *otherActor, uint32 tag, bool &isActive, b2Vec2 normal )
 {
 	lua_getglobal( L, "CollideWithActor" );
 	push( L, otherActor );
 	push( L, tag );
-	lua_pcall( L, 2, 2, 0 );
+	push( L, normal );
+
+	lua_pcall( L, 3, 2, 0 );
 
 	if( !lua_isboolean ( L, -1 ) )
 	{

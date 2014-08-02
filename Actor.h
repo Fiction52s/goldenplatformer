@@ -400,7 +400,7 @@ struct TrueActor : public b2RayCastCallback //change this later
 		std::string &hitboxType );
 
 	bool CollideWithActor( TrueActor *otherActor, 
-		uint32 tag, bool &isActive );
+		uint32 tag, bool &isActive, b2Vec2 normal );
 
 	virtual void SetSpriteScale( uint32 index, 
 		float x, float y ) = 0;
