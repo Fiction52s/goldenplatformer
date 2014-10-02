@@ -300,6 +300,8 @@ void Squad::CheckCamera( sf::Vector2f pos, sf::Vector2f size )
 			}
 		}
 
+
+		//to activate I need a sprite set in Init
 		if( activated )
 		{
 			for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )

@@ -207,7 +207,7 @@ void Tether::Update( PlayerChar *player )
 			raySetting = "joining";
 			world->RayCast( this, (*rIt), player->GetPosition() );	
 
-			int rayCastNum = 1000;
+			int rayCastNum = 50;
 			b2Vec2 blah( player->GetPosition().x - anchorPoints.back().x, player->GetPosition().y - anchorPoints.back().y );
 			for( int b = 1; b < rayCastNum; ++b )
 			{
@@ -411,6 +411,7 @@ void Tether::Shrink( float amount )
 	dir.Normalize();
 
 	st->player->SetVelocity( st->player->GetVelocity().x + dir.x * amount * 1.f / 1, st->player->GetVelocity().y + dir.y * amount * 1.f / 1);
+	cout << "adding vel x: " << dir.x * amount << ", y: " << dir.y * amount << endl;
 	//st->player->GetBody()->ApplyLinearImpulse( amount * 100 * dir, b2Vec2( 0, 0 ) );
 //	st->player->GetBody()->ApplyForceToCenter( amount * 100 * dir );
 	//st->player->SetPosition( st->player->GetPosition() + 

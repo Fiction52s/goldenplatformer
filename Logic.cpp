@@ -225,11 +225,11 @@ int main()
 	levelThumbnails[1].setPosition( 563.65, 766 );
 	levelThumbnails[2].setPosition( 1057.30, 766 );
 
-	levelFiles[0] = "design";
-	levelFiles[1] = "design2";//"t1-3-1";//"design";//"t2-1";
-	levelFiles[2] = "design3";
+	levelFiles[0] = "htest1";
+	levelFiles[1] = "htest2";//"t1-3-1";//"design";//"t2-1";
+	levelFiles[2] = "htest3";
 	levelFiles[3] = "clone_test2";
-	//levelFiles[3] = "boss";
+	//levelFiles[3] = "boss";up
 
 	
 	
