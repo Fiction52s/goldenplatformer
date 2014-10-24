@@ -342,6 +342,10 @@ int main()
 
 		window->clear();
 
+		done = RunStage( levelFiles[0] );
+		window->setView( menuView );
+		if( done ) break;
+
 		if( currentMenu == "main" )
 		{
 			if( menuInput.Down() && !prevMenuInput.Down() )
@@ -386,7 +390,10 @@ int main()
 			{
 				if( menuWords[selectedMainMenu].getString() == "Play" )
 				{
-					SetCurrentMenu( "world" );
+					//SetCurrentMenu( "world" );
+					done = RunStage( levelFiles[0] );
+					window->setView( menuView );
+					if( done ) break;
 				}
 				else if( menuWords[selectedMainMenu].getString() == "Quit" )
 				{

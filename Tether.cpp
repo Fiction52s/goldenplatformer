@@ -8,6 +8,7 @@ Tether::Tether( Stage *st, b2Body *playerBody, b2World *world, float maxLength )
 	anchored( false )
 {
 	maxLen = 100;
+	minLength = 2;
 	lockedRopeLength = 100;
 	locked = false;
 	shotHit = false;
@@ -31,7 +32,7 @@ Tether::Tether( Stage *st, b2Body *playerBody, b2World *world, float maxLength )
 	b2CircleShape cs;
 	cs.m_radius = .1;
 
-	b2FixtureDef fd;
+	b2FixtureDef fd;-
 	fd.shape = &cs;
 	CollisionLayers::SetupFixture( CollisionLayers::TetherShot, fd.filter.categoryBits, fd.filter.maskBits );
 
@@ -170,8 +171,12 @@ void Tether::Update( PlayerChar *player )
 	if( anchored )
 	{
 		raySetting = "splitting";
+		closestList.clear();
 		world->RayCast( this, anchorPoints.back(), player->GetPosition() );
-	
+	//	if( closestList.empty() )
+	//	{
+	//		cout << "closest list empty. no splitting will happen :( " << endl;
+	//	}
 		while( !closestList.empty() )
 		{
 			float min = 1.1;
@@ -186,10 +191,12 @@ void Tether::Update( PlayerChar *player )
 					minIt = it;
 				}
 			}
+			//closestList.clear();
 			closestList.erase( minIt );
 
 			if( minVec.x == anchorPoints.back().x && minVec.y == anchorPoints.back().y )
 			{
+	//			cout << "list size: " << closestList.size() << endl;
 				continue;
 			}
 
@@ -197,7 +204,7 @@ void Tether::Update( PlayerChar *player )
 			Split( player, minVec );
 		}
 
-		if( anchorPoints.size() > 1 )
+		while( anchorPoints.size() > 1 ) //isn't infinite just break out
 		{
 			list<b2Vec2>::reverse_iterator rIt = anchorPoints.rbegin(); 
 			rIt++;	//second from the last
@@ -205,9 +212,10 @@ void Tether::Update( PlayerChar *player )
 			hitSomething = false;
 
 			raySetting = "joining";
+			closestList.clear();
 			world->RayCast( this, (*rIt), player->GetPosition() );	
 
-			int rayCastNum = 50;
+			int rayCastNum = 10;
 			b2Vec2 blah( player->GetPosition().x - anchorPoints.back().x, player->GetPosition().y - anchorPoints.back().y );
 			for( int b = 1; b < rayCastNum; ++b )
 			{
@@ -215,6 +223,7 @@ void Tether::Update( PlayerChar *player )
 				b2Vec2 bbb( blah );
 				bbb.x *= b2;
 				bbb.y *= b2;
+				closestList.clear();
 				world->RayCast( this, (*rIt), anchorPoints.back() + bbb );
 			}
 
@@ -222,6 +231,10 @@ void Tether::Update( PlayerChar *player )
 			{
 				cout << "JOINING THING" << endl;
 				Join( player );
+			}
+			else
+			{
+				break;
 			}
 		}
 	}
@@ -247,6 +260,7 @@ void Tether::Update( PlayerChar *player )
 
 			
 			raySetting = "shotAnchor";
+			closestList.clear();
 			world->RayCast( this, oldShotPos, shotPos );
 			int closestListSize = closestList.size();
 			b2Vec2 minVec( -1, -1 );
@@ -310,7 +324,7 @@ void Tether::Join( PlayerChar* player )
 	}
 	else
 	{
-		rj->SetMaxLength( 1 );
+		rj->SetMaxLength( minLength );
 		cout << "rope is too long" << endl;	
 	}
 }
@@ -371,7 +385,7 @@ void Tether::Shrink( float amount )
 {
 	b2RopeJoint* rj = (b2RopeJoint*)anchorBody->GetJointList()->joint;
 
-	if( rj->GetMaxLength() - amount < 1 )
+	if( rj->GetMaxLength() - amount < minLength )
 	{
 		if( anchorPoints.size() > 1 )
 		{
@@ -381,7 +395,7 @@ void Tether::Shrink( float amount )
 			//rj->SetMaxLength( rj->GetMaxLength() - amount );
 			//lockedRopeLength -= amount;
 			float temp = rj->GetMaxLength() - amount;
-			if( temp < 1 )
+			if( temp < minLength )
 			{
 				//shortReset = true;
 				//return;
@@ -389,7 +403,7 @@ void Tether::Shrink( float amount )
 				//return;
 			
 				
-				rj->SetMaxLength( 1 );
+				rj->SetMaxLength( minLength );
 				lockedRopeLength -= temp;	
 			}
 			
@@ -463,7 +477,7 @@ float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2V
 	}*/
 
 
-	if( raySetting == "splitting" || raySetting == "shotAnchor" )
+	if( raySetting == "splitting" )
 	{
 		//closestFrac = fraction;
 		b2Vec2 collision = point;
@@ -476,7 +490,7 @@ float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2V
 		
 		list<list<b2Vec2>> & stuff = st->staticTileSets[tileX][tileY]->tileChains[localTile];
 
-		closestList.clear();
+		//closestList.clear();
 		b2Vec2 closestPoint(-1,-1);
 		for( list<list<b2Vec2>>::iterator it = stuff.begin(); it != stuff.end(); ++it )
 		{
@@ -485,6 +499,7 @@ float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2V
 				if( closestPoint.x < 0 )
 				{
 					closestPoint.Set( (*it2).x * SF2BOX + tileX, (*it2).y * SF2BOX + tileY );
+					cout << "init setting: " << closestPoint.x << ", " << closestPoint.y << endl;
 				}
 				else
 				{
@@ -492,18 +507,34 @@ float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2V
 					float diffY = closestPoint.y - point.y;
 					float distSqr = diffX * diffX + diffY * diffY;
 					
-					float diffX2 = ((*it2).x * SF2BOX + tileX) - point.x;
-					float diffY2 = ((*it2).y * SF2BOX + tileY) - point.y;
+					b2Vec2 testPoint( ((*it2).x * SF2BOX + tileX), ((*it2).y * SF2BOX + tileY) );
+
+					float diffX2 = testPoint.x - point.x;
+					float diffY2 = testPoint.y - point.y;
 					float distSqr2 = diffX2 * diffX2 + diffY2 * diffY2;
 
+					if ( closestPoint == anchorPoints.back() )
+					{
+						closestPoint.Set( (*it2).x * SF2BOX + tileX, (*it2).y * SF2BOX + tileY );
+					}
+					else if( !(testPoint.x == anchorPoints.back().x && testPoint.y == anchorPoints.back().y ) )
+					{
+					//if ( !(closestPoint == anchorPoints.back()) )
 					if( distSqr2 < distSqr && ( closestPoint.x != anchorPoints.back().x || closestPoint.y != anchorPoints.back()
 						.y ) )
 					{
+						b2Vec2 oldclosestPoint = closestPoint;
 						closestPoint.Set( (*it2).x * SF2BOX + tileX, (*it2).y * SF2BOX + tileY );
+						cout << "back: " << anchorPoints.back().x << ", " << anchorPoints.back().y << endl;
+						cout << "adjusting closest point to: " << closestPoint.x << ", " << closestPoint.y
+							<< " from: " << oldclosestPoint.x << ", " << oldclosestPoint.y << endl;
+					}
 					}
 				}
 			}
 		}
+
+		
 		closestList.push_back( pair<b2Vec2,float>( closestPoint, fraction ) );
 
 		b2Vec2 tile = *tempVec;
@@ -521,6 +552,10 @@ float32 Tether::ReportFixture(b2Fixture* fixture, const b2Vec2& point, const b2V
 	else if( raySetting == "checking" )
 	{
 		hitSomethingChecking = true;
+	}
+	else if( raySetting == "shotAnchor" )
+	{
+		closestList.push_back( pair<b2Vec2,float>( point, fraction ) );
 	}
 	
 

@@ -49,7 +49,7 @@ uint32 TileSet::TileCount()
 {
 	if( texture == NULL )
 	{
-		cout << "texture is null" << endl;
+		cout << "texture is null: " << imageSource << endl;
 	}
 
 	return texture->getSize().x / tileWidth * texture->getSize().y / tileHeight;
@@ -859,7 +859,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 				for( std::map<TileSet*, uint32>::iterator countIt = tilePerSetCount.begin(); 
 					countIt != tilePerSetCount.end(); ++countIt )
 				{
-					cout << "texture: " << (*countIt).first->firstGID << ", count: " << (*countIt).second << endl;
+					//cout << "texture: " << (*countIt).first->firstGID << ", count: " << (*countIt).second << endl;
 					layer->objectMap[(*countIt).first] = 
 						new sf::VertexArray( sf::Quads, (*countIt).second * 4 );
 				}
@@ -1559,6 +1559,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 						ad->angle = 0;
 						ad->parent = NULL;
 						ad->actorCount = 1;
+
 						//ActorDef *ad = new ActorDef( actorType, actorCount, aPos, aVel, facingRight, reverse, angle, 
 						//	NULL );
 						//float angle = 0;
@@ -1945,7 +1946,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 
 				//list<list<b2Vec2>> surroundings;
 				
-
+				//cout << "stage height: " << stageHeight << ", stageWidth: " << stageWidth << endl;
 				
 				for( list<list<b2Vec2>>::iterator localChainsIt = localChains.begin(); 
 					localChainsIt != localChains.end(); ++localChainsIt )
@@ -2082,7 +2083,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 									}
 									else
 									{
-										cout << "issue here: " << x << ", " << y << endl;
+										cout << "issue with tile collisions here: " << x << ", " << y << endl;
 										assert( 0 );
 									}
 									
@@ -2131,7 +2132,7 @@ Stage::Stage( GameController &controller, sf::RenderWindow *window, const std::s
 									}
 									else
 									{
-										cout << "issue here" << endl;
+										cout << "issue here: " << x << ", " << y << endl;
 										assert( 0 );
 									}
 									
@@ -2747,7 +2748,7 @@ void Stage::SetRoom( Room *room )
 //returns false when the game is over
 bool Stage::UpdatePrePhysics()
 {
-	
+	//cout  << "start stage pre" << endl;
 	if( newRoom != NULL )
 	{
 		oldRoom = currentRoom;
@@ -2764,7 +2765,7 @@ bool Stage::UpdatePrePhysics()
 	}
 
 	//cout << "squads: " << currentRoom->squads.size() << endl;
-
+//	cout << "blah 0" << endl;
 
 	//changing from one room to the next
 	if( currentDoor != NULL )
@@ -2778,7 +2779,7 @@ bool Stage::UpdatePrePhysics()
 	
 	consumed.clear();
 
-
+//	cout << "blah 1" << endl;
 	
 	if( cloneWorld )
 	{
@@ -2814,7 +2815,7 @@ bool Stage::UpdatePrePhysics()
 	}
 
 	//cout << "number of actors: " << activeActors.size() << endl;
-
+	//cout << "blah 2" << endl;
 
 	//use AABB of the player to get which air tiles he is touching
 	list<uint32> activeAirTiles;
@@ -2840,19 +2841,27 @@ bool Stage::UpdatePrePhysics()
 		}
 	}
 
+	//cout << "blah 3" << endl;
+
+
+	//cout << "air tiles size: " << activeAirTiles.size() << endl;
 	for( list<uint32>::iterator it = activeAirTiles.begin(); it != activeAirTiles.end(); ++it )
 	{
 		string & handler = airHandlers[(*it)];
+
 		lua_getglobal( L, handler.c_str() );
 		lua_pcall( L, 0, 0, 0 );
 	}
 
+	//cout << "blah 4" << endl;
 
 	//sf::Clock colClock;
 	for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 	{
 		(*it)->ProcessCollisions();
 	}
+
+	//cout << "blah 5" << endl;
 
 	if( cloneWorld )
 	{
@@ -2875,7 +2884,7 @@ bool Stage::UpdatePrePhysics()
 	uint32 maxTime = 0;
 	//string maxType;
 
-	
+//	cout  << "before actors" << endl;
 	for( std::list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end();)
 	{
 		//if( (*it) != player )
@@ -2959,7 +2968,7 @@ bool Stage::UpdatePrePhysics()
 					{
 						RoomRestart();
 
-						--lives;
+					//	--lives;
 					}
 					else
 					{
@@ -3008,7 +3017,7 @@ bool Stage::UpdatePrePhysics()
 				++it;
 			}
 	}
-
+	//cout  << "after actors" << endl;
 	if( cloneWorld )
 	{
 		for( std::list<TrueActor*>::iterator it = cloneActiveActors.begin(); it != cloneActiveActors.end();)
@@ -3102,9 +3111,11 @@ bool Stage::UpdatePrePhysics()
 		}
 		assert( player->isAlive );
 
-		
+	//	cout << "before player" << endl;
 
 		player->UpdatePrePhysics();
+
+	//	cout << "after player" << endl;
 
 		if( !cloneWorld )
 		{
@@ -3212,14 +3223,15 @@ bool Stage::UpdatePrePhysics()
 
 	player->UpdatePrePhysics();*/
 	
-
+	//cout << "before lua update" << endl;
 	lua_getglobal( L, "UpdatePrePhysics" );
 	lua_pcall( L, 0, 0, 0 );
+//	cout << "after lua update" << endl;
 
 	c.UpdateZoom();
 
 	
-
+//	cout << "end of function" << endl;
 	return true;
 }
 
@@ -3443,6 +3455,7 @@ bool Stage::Run()
 		//oldAddedActors.push_back( (*it) );
 			(*it)->Init( world );
 			activeActors.push_back( (*it) );
+		
 		}
 	}
 
@@ -3585,11 +3598,11 @@ bool Stage::Run()
 			
 
 			//eventually i will get rid of this
-			if( currentInput.start ) //&& !prevInput.start )
+			if( currentInput.start && !prevInput.start )
 			{
 				
 				
-				if( currentInput.Left() )
+			/*	if( currentInput.Left() )
 				{
 					currentRoom->spawn.x -= .5;
 				}
@@ -3605,7 +3618,7 @@ bool Stage::Run()
 				else if( currentInput.Down() )
 				{
 					currentRoom->spawn.y += .5;
-				}
+				}*/
 
 				RoomRestart();
 			}
@@ -3613,11 +3626,11 @@ bool Stage::Run()
 			if( currentInput.back && !prevInput.back )
 			{
 				
-				if( !m_singleFrameMode )
+			/*	if( !m_singleFrameMode )
 				{
 					selectedPauseMenu = 0;
 				}
-				m_singleFrameMode = !m_singleFrameMode;
+				m_singleFrameMode = !m_singleFrameMode;*/
 			}
 				
 			if( m_singleFrameMode )
@@ -3629,6 +3642,11 @@ bool Stage::Run()
 					m_skipFrame = true;
 					prevInput = storedInput;
 
+					for( list<b2Vec2>::iterator pit = player->rightTether->anchorPoints.begin();
+						pit != player->rightTether->anchorPoints.end(); ++pit )
+					{
+						cout << "point: " << (*pit).x << ", " << (*pit).y << endl;
+					}
 					/*for( list<TrueActor*>::iterator it = activeActors.begin(); it != activeActors.end(); ++it )
 					{
 						cout << "actor: " << (*it)->GetType() << ", (" << (*it)->GetPosition().x 
@@ -3678,7 +3696,7 @@ bool Stage::Run()
 						}
 						else if( pauseMenuTexts[selectedPauseMenu].getString() == "Restart Room (Lose 1 life)" && lives > 0 )
 						{
-							--lives;
+						//	--lives;
 							RoomRestart();
 							m_singleFrameMode = false;
 							continue;
@@ -3717,7 +3735,7 @@ bool Stage::Run()
 								//texVertexMap[(*it)] = new sf::VertexArray( sf::Quads, viewHalfWidthTiles * 2 * viewHalfHeightTiles * 2 * 4 );//viewHalfWidthTiles * viewHalfHeightTiles * 4 );
 							}
 
-							return false;
+							return true; //was originally false
 						}
 						else if( pauseMenuTexts[selectedPauseMenu].getString() ==  "Quit Application" )
 						{
@@ -3815,8 +3833,9 @@ bool Stage::Run()
 			//cout << "eztime: " << ttClock.getElapsedTime().asSeconds() << endl;
 			sf::Clock testClock;
 
-
+		//	cout << "before pre" << endl;
 			UpdatePrePhysics();
+		//	cout << "after pre" << endl;
 
 			uint32 pretimetest = testClock.getElapsedTime().asMicroseconds();
 			if( pretimetest > 16700 )
@@ -3857,9 +3876,10 @@ bool Stage::Run()
 			//sf::Time uppsct = statClock.getElapsedTime();
 		//	cout << "upp: " << uppsct.asMicroseconds() << endl;
 
-
+		//	cout << "before post" << endl;
 			UpdatePostPhysics();
-
+		//	cout << "after post" << endl;
+		
 			viewSize = ( sf::Vector2f( 1920, 1080 ) * c.zoom );
 	
 			viewSize.x = floor( viewSize.x + .5f );
@@ -3986,7 +4006,7 @@ bool Stage::Run()
 				//texVertexMap[(*it)] = new sf::VertexArray( sf::Quads, viewHalfWidthTiles * 2 * viewHalfHeightTiles * 2 * 4 );//viewHalfWidthTiles * viewHalfHeightTiles * 4 );
 			}
 
-			return false;
+			return true;//would normally be false
 		}
 
 		
@@ -4747,8 +4767,10 @@ void Stage::UpdatePostPhysics()
 	}
 	eventAreasExited.clear();
 	
+	//cout << "before stage post" << endl;
 	lua_getglobal( L, "UpdatePostPhysics" );
 	lua_pcall( L, 0, 0, 0 );
+	//cout << "after stage post" << endl;
 
 	for( std::map<std::string, lua_State*>::iterator collisionHandlerIt = collisionHandlers.begin(); 
 		collisionHandlerIt != collisionHandlers.end(); collisionHandlerIt++ )
@@ -5921,9 +5943,9 @@ void Stage::RoomRestart()
 	}*/
 				
 	//player->SetVelocity( 0, 0 );
-	player->SetPosition( spawnPoint.x, spawnPoint.y );
-
-	SetCameraPosition( spawnPoint.x, spawnPoint.y );
+	//player->SetPosition( spawnPoint.x, spawnPoint.y );
+	SetCameraPosition( player->GetPosition().x, player->GetPosition().y );
+	//SetCameraPosition( spawnPoint.x, spawnPoint.y );
 	SetCameraZoom( 1 );
 	c.offset.SetZero();
 }

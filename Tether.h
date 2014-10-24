@@ -67,6 +67,8 @@ struct Tether : public b2RayCastCallback
 	b2Body *shotBody;
 
 	bool shortReset;
+
+	float minLength;
 };
 
 #endif

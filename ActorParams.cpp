@@ -225,7 +225,6 @@ void ActorParams::Kill()
 
 void ActorParams::SetSpriteOffset( uint32 spriteIndex, float x, float y )
 {
-	cout << "setting offset: " << x << ", " << y << endl;
 	spriteOffset[spriteIndex].Set( x, y );
 }
 

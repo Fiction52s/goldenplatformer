@@ -103,6 +103,7 @@ uint32 & SingleActor::GetActorsAttackedIndex()
 
 void SingleActor::Init( b2World *p_world )
 {
+	cout << "initializing: << " << actorType << endl;
 	isAlive = true;
 	
 	world = p_world;
@@ -113,7 +114,7 @@ void SingleActor::Init( b2World *p_world )
 		facingRight = true; //so that it can be turned to the left again
 		FaceLeft();
 	}
-
+	cout << "initializing part 2: " << actorType << endl;
 	//this will set up the actions, set an initial action, 
 	lua_getglobal( L, "Init" );
 	lua_pcall( L, 0, 0, 0 );
@@ -289,6 +290,7 @@ void SingleActor::SetSprite( uint32 spriteIndex,
 
 bool SingleActor::UpdatePrePhysics()
 {
+	//cout << "before lua update " << actorType << endl;
 	lua_getglobal( L, "UpdatePrePhysics" );
 	lua_pcall( L, 0, 0, 0 );
 
